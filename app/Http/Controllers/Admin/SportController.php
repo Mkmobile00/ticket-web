@@ -10,6 +10,40 @@ class SportController extends AdminController
     protected string $modelClass = \App\Models\Sport::class;
     protected string $resource = 'sport';
 
+    protected function fields(): array
+    {
+        $fields = parent::fields();
+        foreach ($fields as &$f) {
+            if ($f['name'] === 'seat_layout') {
+                $f['type'] = 'seat-layout';
+            }
+        }
+        return $fields;
+    }
+
+    protected function rules(?\Illuminate\Database\Eloquent\Model $item = null): array
+    {
+        $rules = parent::rules($item);
+        $rules['seat_layout'] = 'nullable|array';
+        $rules['seat_layout.rows'] = 'nullable|array';
+        $rules['seat_layout.rows.*'] = 'string|max:3';
+        $rules['seat_layout.seats_per_row'] = 'nullable|array';
+        $rules['seat_layout.seats_per_row.*'] = 'integer|min:1|max:200';
+        return $rules;
+    }
+
+    protected function normalizeSeatLayout(Request $request): array
+    {
+        $rows = array_values(array_map(fn ($r) => strtoupper(trim((string) $r)), (array) $request->input('seat_layout.rows', [])));
+        $counts = array_values(array_map(fn ($c) => max(1, (int) $c), (array) $request->input('seat_layout.seats_per_row', [])));
+        $pairs = [];
+        foreach ($rows as $i => $r) {
+            if ($r === '') continue;
+            $pairs[$r] = $counts[$i] ?? 1;
+        }
+        return ['rows' => array_keys($pairs), 'seats_per_row' => array_values($pairs)];
+    }
+
     public function index()
     {
         $items = ($this->modelClass)::query()->latest('id')->paginate(15);
@@ -35,6 +69,7 @@ class SportController extends AdminController
     public function store(Request $request)
     {
         $data = $request->validate($this->rules());
+        $data['seat_layout'] = $this->normalizeSeatLayout($request);
         ($this->modelClass)::create($data);
         return redirect()->route('admin.' . \Illuminate\Support\Str::plural($this->resource) . '.index')->with('status', 'Created.');
     }
@@ -60,6 +95,7 @@ class SportController extends AdminController
     {
         $item = ($this->modelClass)::findOrFail($id);
         $data = $request->validate($this->rules($item));
+        $data['seat_layout'] = $this->normalizeSeatLayout($request);
         $item->update($data);
         return redirect()->route('admin.' . \Illuminate\Support\Str::plural($this->resource) . '.index')->with('status', 'Updated.');
     }

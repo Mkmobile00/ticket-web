@@ -49,7 +49,7 @@
                             <td>{{ $cinema?->name ?? '—' }}</td>
                             <td>{{ $seatLabels ?: '—' }}</td>
                             <td>{{ $showtime ? \Carbon\Carbon::parse($showtime->show_date)->format('d M Y') . ' ' . \Carbon\Carbon::parse($showtime->show_time)->format('H:i') : '—' }}</td>
-                            <td>${{ number_format($b->total_amount, 2) }}</td>
+                            <td>Rs {{ number_format($b->total_amount, 2) }}</td>
                             <td><span class="badge bg-{{ $cls }}">{{ $b->status }}</span></td>
                             <td class="text-end">
                                 <a href="{{ route('account.bookings.show', $b->id) }}" class="btn btn-sm btn-outline-light"><i class="fas fa-eye"></i></a>

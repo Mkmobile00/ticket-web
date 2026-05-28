@@ -11,8 +11,8 @@
                 <dl class="row">
                     <dt class="col-sm-4">User</dt><dd class="col-sm-8">{{ $booking->user->name ?? '-' }} ({{ $booking->user->email ?? '-' }})</dd>
                     <dt class="col-sm-4">Bookable</dt><dd class="col-sm-8">{{ class_basename($booking->bookable_type) }} #{{ $booking->bookable_id }}</dd>
-                    <dt class="col-sm-4">Total</dt><dd class="col-sm-8">${{ number_format($booking->total_amount, 2) }}</dd>
-                    <dt class="col-sm-4">Discount</dt><dd class="col-sm-8">${{ number_format($booking->discount_amount ?? 0, 2) }}</dd>
+                    <dt class="col-sm-4">Total</dt><dd class="col-sm-8">Rs {{ number_format($booking->total_amount, 2) }}</dd>
+                    <dt class="col-sm-4">Discount</dt><dd class="col-sm-8">Rs {{ number_format($booking->discount_amount ?? 0, 2) }}</dd>
                     <dt class="col-sm-4">Promo</dt><dd class="col-sm-8">{{ $booking->promoCode->code ?? '-' }}</dd>
                     <dt class="col-sm-4">Payment</dt><dd class="col-sm-8">{{ $booking->payment_method ?? '-' }} / {{ $booking->transaction_id ?? '-' }}</dd>
                     <dt class="col-sm-4">Status</dt><dd class="col-sm-8"><span class="badge bg-secondary">{{ $booking->status }}</span></dd>
@@ -28,7 +28,7 @@
                 @forelse ($booking->seats as $s)
                     <li class="list-group-item d-flex justify-content-between">
                         <span>Row {{ $s->seat_row }} - Seat {{ $s->seat_number }}</span>
-                        <span>{{ $s->ticketClass->name ?? '' }} (${{ number_format($s->ticketClass->price ?? 0, 2) }})</span>
+                        <span>{{ $s->ticketClass->name ?? '' }} (Rs {{ number_format($s->ticketClass->price ?? 0, 2) }})</span>
                     </li>
                 @empty
                     <li class="list-group-item text-muted">No seats.</li>

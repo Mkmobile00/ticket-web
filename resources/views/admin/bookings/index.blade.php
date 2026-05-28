@@ -13,7 +13,7 @@
                         <td>{{ $b->id }}</td>
                         <td>{{ $b->user->name ?? 'Guest' }}</td>
                         <td>{{ class_basename($b->bookable_type) }} #{{ $b->bookable_id }}</td>
-                        <td>${{ number_format($b->total_amount, 2) }}</td>
+                        <td>Rs {{ number_format($b->total_amount, 2) }}</td>
                         <td>
                             @php $cls = match($b->status) { 'confirmed'=>'success','pending'=>'warning','refunded'=>'danger', default=>'secondary' }; @endphp
                             <span class="badge bg-{{ $cls }}">{{ $b->status }}</span>

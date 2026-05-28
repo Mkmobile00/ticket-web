@@ -54,7 +54,7 @@
                     <div class="proceed-to-book">
                         <div class="book-item"><span>Selected Seats</span><h3 class="title" id="selected-seats-display">—</h3></div>
                         <div class="book-item"><span>Hold expires in</span><h3 class="title" id="hold-timer">5:00</h3></div>
-                        <div class="book-item"><span>Total Price</span><h3 class="title">$<span id="total-price-display">0.00</span></h3></div>
+                        <div class="book-item"><span>Total Price</span><h3 class="title">Rs <span id="total-price-display">0.00</span></h3></div>
                         <div class="book-item">
                             @auth
                                 <button type="submit" class="custom-button" id="proceed-btn" disabled>proceed</button>
@@ -142,7 +142,7 @@
 
         function build(data) {
             tierLegend.innerHTML = (data.tiers || []).map(t =>
-                `<span style="margin:0 12px;"><strong style="color:#fff;">${t.name}</strong> $${Number(t.price).toFixed(0)}</span>`).join('');
+                `<span style="margin:0 12px;"><strong style="color:#fff;">${t.name}</strong> Rs ${Number(t.price).toFixed(0)}</span>`).join('');
             area.innerHTML = '';
             (data.rows || []).forEach(row => {
                 const li = document.createElement('li'); li.className = 'seat-line';

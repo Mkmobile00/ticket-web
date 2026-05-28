@@ -85,7 +85,7 @@
                         <select name="ticket_class_id" required class="select-bar" style="display:inline-block;width:auto;min-width:240px">
                             @forelse ($showtime->ticketClasses as $tc)
                                 <option value="{{ $tc->id }}" data-price="{{ $tc->price }}">
-                                    {{ ucfirst($tc->name) }} — ${{ number_format($tc->price, 2) }}
+                                    {{ ucfirst($tc->name) }} — Rs {{ number_format($tc->price, 2) }}
                                 </option>
                             @empty
                                 <option value="">No ticket classes available</option>
@@ -129,7 +129,7 @@
                         </div>
                         <div class="book-item">
                             <span>total price</span>
-                            <h3 class="title">$<span id="total-price-display">0.00</span></h3>
+                            <h3 class="title">Rs <span id="total-price-display">0.00</span></h3>
                         </div>
                         <div class="book-item">
                             @auth

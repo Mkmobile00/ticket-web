@@ -46,7 +46,7 @@
                         </div>
                     </div>
                     <div class="text-end">
-                        <div style="font-weight:600;">${{ number_format($b->total_amount, 2) }}</div>
+                        <div style="font-weight:600;">Rs {{ number_format($b->total_amount, 2) }}</div>
                         @php $cls = match($b->status){ 'confirmed'=>'#10b981','pending'=>'#f59e0b','cancelled','refunded'=>'#ef4444', default=>'#6b7280' }; @endphp
                         <span style="background:{{ $cls }};color:#fff;padding:2px 10px;border-radius:10px;font-size:11px;text-transform:uppercase;">{{ $b->status }}</span>
                     </div>

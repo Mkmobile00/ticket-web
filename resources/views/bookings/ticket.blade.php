@@ -58,7 +58,7 @@
                                 <tr><td style="padding:8px 0;color:#777;">Seats</td><td style="padding:8px 0;text-align:right;font-weight:700;color:#ff5046;">{{ $seats }}</td></tr>
                                 <tr><td style="padding:8px 0;color:#777;">Tickets</td><td style="padding:8px 0;text-align:right;">{{ $booking->seats->count() }}</td></tr>
                                 <tr><td style="padding:8px 0;color:#777;">Paid via</td><td style="padding:8px 0;text-align:right;text-transform:capitalize;">{{ $booking->payment_method }}</td></tr>
-                                <tr><td style="padding:8px 0;color:#777;border-top:1px dashed #ddd;">Total</td><td style="padding:8px 0;text-align:right;font-weight:800;border-top:1px dashed #ddd;">${{ number_format($booking->total_amount, 2) }}</td></tr>
+                                <tr><td style="padding:8px 0;color:#777;border-top:1px dashed #ddd;">Total</td><td style="padding:8px 0;text-align:right;font-weight:800;border-top:1px dashed #ddd;">Rs {{ number_format($booking->total_amount, 2) }}</td></tr>
                             </table>
                         </div>
                         <div style="flex:0 0 200px;text-align:center;border-left:1px dashed #ddd;padding-left:24px;">

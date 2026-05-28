@@ -49,7 +49,7 @@
                             <div class="ticket--item" style="padding-bottom:24px;">
                                 <div class="ticket-content">
                                     <span class="ticket-title">{{ $ticket->type }}</span>
-                                    <h2 class="amount" data-price="{{ $ticket->price }}"><sup>$</sup>{{ number_format($ticket->price, 0) }}</h2>
+                                    <h2 class="amount" data-price="{{ $ticket->price }}"><sup>Rs </sup>{{ number_format($ticket->price, 0) }}</h2>
                                     <ul>
                                         <li>{{ $available > 0 ? $available . ' tickets available' : 'Sold out' }}</li>
                                     </ul>
@@ -70,7 +70,7 @@
 
                 @if ($sport->tickets->count())
                     <div class="text-center mt-4" style="color:#fff;">
-                        <h4>Total: $<span id="ticket-total">0.00</span></h4>
+                        <h4>Total: Rs <span id="ticket-total">0.00</span></h4>
                         @auth
                             <button type="submit" class="custom-button mt-2" id="proceed-btn" disabled>Proceed to Checkout</button>
                         @else

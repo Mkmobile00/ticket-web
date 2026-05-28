@@ -70,7 +70,7 @@
                                     <div class="grid-thumb">
                                         <img src="{{ asset('assets/images/movie/popcorn/pop1.png') }}" alt="movie/popcorn">
                                         <div class="offer-tag">
-                                            $57
+                                            Rs 57
                                         </div>
                                         <div class="offer-remainder">
                                             <h6 class="o-title mt-0">24%</h6>
@@ -99,7 +99,7 @@
                                     <div class="grid-thumb">
                                         <img src="{{ asset('assets/images/movie/popcorn/pop2.png') }}" alt="movie/popcorn">
                                         <div class="offer-tag">
-                                            $57
+                                            Rs 57
                                         </div>
                                         <div class="offer-remainder">
                                             <h6 class="o-title mt-0">24%</h6>
@@ -128,7 +128,7 @@
                                     <div class="grid-thumb">
                                         <img src="{{ asset('assets/images/movie/popcorn/pop3.png') }}" alt="movie/popcorn">
                                         <div class="offer-tag">
-                                            $57
+                                            Rs 57
                                         </div>
                                         <div class="offer-remainder">
                                             <h6 class="o-title mt-0">24%</h6>
@@ -157,7 +157,7 @@
                                     <div class="grid-thumb">
                                         <img src="{{ asset('assets/images/movie/popcorn/pop4.png') }}" alt="movie/popcorn">
                                         <div class="offer-tag">
-                                            $57
+                                            Rs 57
                                         </div>
                                         <div class="offer-remainder">
                                             <h6 class="o-title mt-0">24%</h6>
@@ -197,12 +197,12 @@
                                 <div class="info"><span>10 SEP TUE, 11:00 PM</span> <span>Tickets</span></div>
                             </li>
                             <li>
-                                <h6 class="subtitle mb-0"><span>Tickets  Price</span><span>$150</span></h6>
+                                <h6 class="subtitle mb-0"><span>Tickets  Price</span><span>Rs 150</span></h6>
                             </li>
                         </ul>
                         <ul class="side-shape">
                             <li>
-                                <h6 class="subtitle"><span>combos</span><span>$57</span></h6>
+                                <h6 class="subtitle"><span>combos</span><span>Rs 57</span></h6>
                                 <span class="info"><span>2 Nachos Combo</span></span>
                             </li>
                             <li>
@@ -211,13 +211,13 @@
                         </ul>
                         <ul>
                             <li>
-                                <span class="info"><span>price</span><span>$207</span></span>
-                                <span class="info"><span>vat</span><span>$15</span></span>
+                                <span class="info"><span>price</span><span>Rs 207</span></span>
+                                <span class="info"><span>vat</span><span>Rs 15</span></span>
                             </li>
                         </ul>
                     </div>
                     <div class="proceed-area  text-center">
-                        <h6 class="subtitle"><span>Amount Payable</span><span>$222</span></h6>
+                        <h6 class="subtitle"><span>Amount Payable</span><span>Rs 222</span></h6>
                         <a href="#0" class="custom-button back-button">proceed</a>
                     </div>
                     <div class="note">

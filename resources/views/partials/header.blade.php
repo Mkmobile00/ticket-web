@@ -3,6 +3,47 @@
     $is = fn($names) => in_array($current, (array) $names, true) ? 'active' : '';
     $isAny = fn($prefixes) => collect((array) $prefixes)->contains(fn($p) => str_starts_with((string) $current, $p)) ? 'active' : '';
 @endphp
+<style>
+    /* ---- City selector ---- */
+    .city-selector .city-trigger i.fa-map-marker-alt{ color:#ff5046; margin-right:6px; }
+    .city-selector .city-panel{
+        width:340px !important; padding:14px !important;
+        background:#141a2b !important; border:1px solid #2b3450 !important;
+        border-radius:14px !important; box-shadow:0 22px 50px rgba(0,0,0,.5) !important;
+        left:0 !important;
+    }
+    .city-selector .city-panel > li{ padding:0 !important; border:0 !important; }
+    .city-selector .city-panel > li::before{ display:none !important; }
+    .city-head{
+        color:#8b95b5 !important; font-size:11px !important; font-weight:700;
+        text-transform:uppercase; letter-spacing:.08em; padding:0 4px 10px !important;
+    }
+    .city-grid{
+        display:grid; grid-template-columns:1fr 1fr; gap:8px;
+        max-height:300px; overflow:auto; padding:2px;
+    }
+    .city-grid::-webkit-scrollbar{ width:5px; }
+    .city-grid::-webkit-scrollbar-thumb{ background:#3a4566; border-radius:3px; }
+    .city-chip{
+        display:flex !important; align-items:center; justify-content:space-between; gap:6px;
+        padding:10px 12px !important; border-radius:9px; background:#1e2742 !important;
+        color:#cfd6ea !important; font-size:13.5px; text-transform:capitalize;
+        border:1px solid transparent; transition:all .15s ease;
+    }
+    .city-chip:hover{ background:#283457 !important; transform:translateY(-2px); border-color:#3a4566; color:#fff !important; }
+    .city-chip.active{
+        background:linear-gradient(135deg,#ff5046,#ff8a3d) !important; color:#fff !important;
+        font-weight:600; box-shadow:0 6px 16px rgba(255,80,70,.4);
+    }
+    .city-chip.active i.fa-check{ font-size:11px; }
+    .city-clear{
+        display:block !important; text-align:center; margin-top:12px !important;
+        padding-top:10px !important; border-top:1px solid #2b3450;
+        color:#8b95b5 !important; font-size:12.5px;
+    }
+    .city-clear:hover{ color:#ff7a70 !important; }
+    @media(max-width:991px){ .city-selector .city-panel{ width:100% !important; } }
+</style>
 <!-- ==========Header-Section========== -->
 <header class="header-section">
     <div class="container">
@@ -14,22 +55,26 @@
             </div>
             <ul class="menu">
                 <li class="city-selector">
-                    <a href="#0">
-                        <i class="flaticon-pin"></i>
-                        {{ ($selectedCity ?? null)?->name ?? 'Select City' }}
-                        <i class="flaticon-down-arrow" style="font-size:.7em;margin-left:4px;"></i>
+                    <a href="#0" class="city-trigger">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>{{ ($selectedCity ?? null)?->name ?? 'Select City' }}</span>
+                        <i class="fas fa-angle-down" style="font-size:.75em;margin-left:5px;"></i>
                     </a>
-                    <ul class="submenu" style="max-height:340px;overflow:auto;">
-                        @foreach (($allCities ?? []) as $c)
-                            <li>
-                                <a href="{{ route('city.set', $c->slug) }}"
-                                   style="{{ ($selectedCity ?? null)?->id === $c->id ? 'color:#ff5046;font-weight:600;' : '' }}">
-                                    {{ $c->name }}
-                                </a>
-                            </li>
-                        @endforeach
+                    <ul class="submenu city-panel">
+                        <li class="city-head">Select your city</li>
+                        <li class="city-grid-wrap">
+                            <span class="city-grid">
+                                @foreach (($allCities ?? []) as $c)
+                                    <a href="{{ route('city.set', $c->slug) }}"
+                                       class="city-chip {{ ($selectedCity ?? null)?->id === $c->id ? 'active' : '' }}">
+                                        <span>{{ $c->name }}</span>
+                                        @if (($selectedCity ?? null)?->id === $c->id)<i class="fas fa-check"></i>@endif
+                                    </a>
+                                @endforeach
+                            </span>
+                        </li>
                         @if ($selectedCity ?? null)
-                            <li><a href="{{ route('city.clear') }}" style="color:#888;">✕ Clear city</a></li>
+                            <li class="city-clear-wrap"><a href="{{ route('city.clear') }}" class="city-clear"><i class="fas fa-times"></i> Clear selection</a></li>
                         @endif
                     </ul>
                 </li>
@@ -94,8 +139,24 @@
                     </li>
                 @endguest
                 @auth
-                    <li class="header-button pr-0">
-                        <a href="{{ route('account.dashboard') }}">{{ Str::limit(auth()->user()->name, 12) }}</a>
+                    <li>
+                        <a href="#0" title="{{ auth()->user()->name }}">
+                            <i class="fas fa-user-circle"></i>
+                            {{ \Illuminate\Support\Str::of(auth()->user()->name)->explode(' ')->first() }}
+                            <i class="fas fa-angle-down" style="font-size:.8em;"></i>
+                        </a>
+                        <ul class="submenu">
+                            <li><a href="{{ route('account.dashboard') }}">My Account</a></li>
+                            <li><a href="{{ route('account.bookings.index') }}">My Bookings</a></li>
+                            <li><a href="{{ route('account.profile.edit') }}">Profile</a></li>
+                            @if (auth()->user()->is_admin)
+                                <li><a href="{{ url('/admin') }}">Admin Panel</a></li>
+                            @endif
+                            <li>
+                                <a href="#0" onclick="event.preventDefault(); document.getElementById('logout-form-pill').submit();">Sign Out</a>
+                                <form id="logout-form-pill" action="{{ route('logout') }}" method="POST" class="d-none">@csrf</form>
+                            </li>
+                        </ul>
                     </li>
                 @endauth
             </ul>

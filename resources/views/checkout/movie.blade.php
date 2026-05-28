@@ -146,18 +146,18 @@
                                 <h6 class="subtitle"><span>Seats</span><span>{{ $booking->seats->pluck('seat_row')->zip($booking->seats->pluck('seat_number'))->map(fn($p) => $p[0] . $p[1])->join(', ') }}</span></h6>
                             </li>
                             <li>
-                                <h6 class="subtitle mb-0"><span>Tickets Price</span><span>${{ number_format($booking->total_amount, 2) }}</span></h6>
+                                <h6 class="subtitle mb-0"><span>Tickets Price</span><span>Rs {{ number_format($booking->total_amount, 2) }}</span></h6>
                             </li>
                         </ul>
                         <ul>
                             <li>
-                                <span class="info"><span>Subtotal</span><span>${{ number_format($booking->total_amount, 2) }}</span></span>
-                                <span class="info"><span>VAT (5%)</span><span>${{ number_format($vat, 2) }}</span></span>
+                                <span class="info"><span>Subtotal</span><span>Rs {{ number_format($booking->total_amount, 2) }}</span></span>
+                                <span class="info"><span>VAT (5%)</span><span>Rs {{ number_format($vat, 2) }}</span></span>
                             </li>
                         </ul>
                     </div>
                     <div class="proceed-area text-center">
-                        <h6 class="subtitle"><span>Amount Payable</span><span>${{ number_format($payable, 2) }}</span></h6>
+                        <h6 class="subtitle"><span>Amount Payable</span><span>Rs {{ number_format($payable, 2) }}</span></h6>
                     </div>
                 </div>
             </div>

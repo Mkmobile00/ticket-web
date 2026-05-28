@@ -14,12 +14,12 @@
                         @foreach ($booking->seats->groupBy('tier_label') as $tier => $group)
                             <li class="d-flex justify-content-between" style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.1);color:#cfd4db;">
                                 <span>{{ $tier ?: 'Seat' }} <span class="text-muted">× {{ $group->count() }}</span><br><small class="text-muted">{{ $group->map(fn($s)=>$s->seat_row.$s->seat_number)->implode(', ') }}</small></span>
-                                <span>${{ number_format($group->sum('price'), 2) }}</span>
+                                <span>Rs {{ number_format($group->sum('price'), 2) }}</span>
                             </li>
                         @endforeach
                         <li class="d-flex justify-content-between" style="padding:12px 0;font-weight:700;color:#fff;">
                             <span>Total</span>
-                            <span>${{ number_format($booking->total_amount, 2) }}</span>
+                            <span>Rs {{ number_format($booking->total_amount, 2) }}</span>
                         </li>
                     </ul>
                 </div>
@@ -39,7 +39,7 @@
                         <div class="alert" style="background:#eef6ff;border:1px solid #cfe2ff;color:#234;border-radius:8px;padding:12px 14px;font-size:13px;">
                             <strong>Test payments only.</strong> eSewa sandbox login: <code>9806800001</code> / <code>Nepal@123</code> / MPIN <code>1122</code> / OTP <code>123456</code>. Card auto-completes.
                         </div>
-                        <button type="submit" class="custom-button" style="border:0;">Pay ${{ number_format($booking->total_amount, 2) }}</button>
+                        <button type="submit" class="custom-button" style="border:0;">Pay Rs {{ number_format($booking->total_amount, 2) }}</button>
                     </form>
                 </div>
             </div>

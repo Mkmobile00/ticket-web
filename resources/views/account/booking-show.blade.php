@@ -55,13 +55,13 @@
                 <div style="background:#1c1d28;padding:24px;border-radius:6px;color:#fff;">
                     <h5>Payment Summary</h5>
                     <hr style="border-color:#2a2d3a;">
-                    <div class="d-flex justify-content-between mb-2"><span>Tickets</span><span>${{ number_format($booking->total_amount, 2) }}</span></div>
-                    <div class="d-flex justify-content-between mb-2"><span>VAT (5%)</span><span>${{ number_format($vat, 2) }}</span></div>
+                    <div class="d-flex justify-content-between mb-2"><span>Tickets</span><span>Rs {{ number_format($booking->total_amount, 2) }}</span></div>
+                    <div class="d-flex justify-content-between mb-2"><span>VAT (5%)</span><span>Rs {{ number_format($vat, 2) }}</span></div>
                     @if ($booking->discount_amount > 0)
-                        <div class="d-flex justify-content-between mb-2"><span>Discount</span><span>-${{ number_format($booking->discount_amount, 2) }}</span></div>
+                        <div class="d-flex justify-content-between mb-2"><span>Discount</span><span>-Rs {{ number_format($booking->discount_amount, 2) }}</span></div>
                     @endif
                     <hr style="border-color:#2a2d3a;">
-                    <div class="d-flex justify-content-between mb-3" style="font-size:1.2rem;font-weight:700;"><span>Total</span><span>${{ number_format($payable - ($booking->discount_amount ?? 0), 2) }}</span></div>
+                    <div class="d-flex justify-content-between mb-3" style="font-size:1.2rem;font-weight:700;"><span>Total</span><span>Rs {{ number_format($payable - ($booking->discount_amount ?? 0), 2) }}</span></div>
 
                     @if (! in_array($booking->status, ['cancelled', 'refunded']))
                         <form method="POST" action="{{ route('account.bookings.cancel', $booking->id) }}" onsubmit="return confirm('Cancel this booking? This cannot be undone.')">

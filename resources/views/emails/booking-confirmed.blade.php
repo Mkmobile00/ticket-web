@@ -35,7 +35,7 @@
                 <tr><td style="padding:6px 0;color:#666;">{{ $isMovie ? 'Cinema' : 'Venue' }}</td><td style="padding:6px 0;text-align:right;">{{ $venue ?: '—' }}</td></tr>
                 <tr><td style="padding:6px 0;color:#666;">Date &amp; Time</td><td style="padding:6px 0;text-align:right;">{{ $when ?: '—' }}</td></tr>
                 <tr><td style="padding:6px 0;color:#666;">Tickets</td><td style="padding:6px 0;text-align:right;font-weight:600;">{{ $detail }}</td></tr>
-                <tr><td style="padding:6px 0;color:#666;">Total Paid</td><td style="padding:6px 0;text-align:right;font-weight:700;">${{ number_format($booking->total_amount, 2) }}</td></tr>
+                <tr><td style="padding:6px 0;color:#666;">Total Paid</td><td style="padding:6px 0;text-align:right;font-weight:700;">Rs {{ number_format($booking->total_amount, 2) }}</td></tr>
             </table>
             <div style="margin:22px 0;text-align:center;">
                 <p style="font-size:13px;color:#666;margin-bottom:8px;">Show this QR code at entry:</p>
