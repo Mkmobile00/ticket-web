@@ -1,0 +1,66 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Showtime extends Model
+{
+    use HasFactory;
+
+    protected $fillable = ['movie_id', 'screen_id', 'language_id', 'format_id', 'show_date', 'show_time', 'available_seats', 'status'];
+
+    protected $casts = [
+        'show_date' => 'date',
+    ];
+
+    public function movie()
+    {
+        return $this->belongsTo(Movie::class);
+    }
+
+    public function screen()
+    {
+        return $this->belongsTo(Screen::class);
+    }
+
+    public function language()
+    {
+        return $this->belongsTo(Language::class);
+    }
+
+    public function format()
+    {
+        return $this->belongsTo(Format::class);
+    }
+
+    public function ticketClasses()
+    {
+        return $this->hasMany(TicketClass::class);
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    /**
+     * Human-readable label for admin dropdowns/lists, e.g.
+     * "Jawan — PVR: Forum Mall (IMAX) · Wed 28 May 7:45 PM".
+     */
+    public function getLabelAttribute(): string
+    {
+        $movie = $this->movie?->title ?? 'Movie';
+        $cinema = $this->screen?->cinema?->name ?? 'Cinema';
+        $screen = $this->screen?->name ? ' (' . $this->screen->name . ')' : '';
+        $date = \Illuminate\Support\Carbon::parse($this->show_date)->format('D d M');
+        $time = \Illuminate\Support\Carbon::parse($this->show_time)->format('g:i A');
+        return "{$movie} — {$cinema}{$screen} · {$date} {$time}";
+    }
+
+    public function bookedSeats()
+    {
+        return $this->hasMany(BookingSeat::class);
+    }
+}

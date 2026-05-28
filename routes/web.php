@@ -1,0 +1,125 @@
+<?php
+
+use App\Http\Controllers\Api\SeatController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BlogController;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\EventController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MovieController;
+use App\Http\Controllers\NewsletterController;
+use App\Http\Controllers\PageController;
+use App\Http\Controllers\PopcornController;
+use App\Http\Controllers\SpeakerController;
+use App\Http\Controllers\SportController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// City selector (BookMyShow-style) — remembers the visitor's city in the session.
+Route::get('/city/{city:slug}', function (\App\Models\City $city) {
+    session(['selected_city_id' => $city->id, 'selected_city_name' => $city->name]);
+    return back();
+})->name('city.set');
+Route::get('/city-clear/all', function () {
+    session()->forget(['selected_city_id', 'selected_city_name']);
+    return back();
+})->name('city.clear');
+
+// Movies
+Route::get('/movies', [MovieController::class, 'index'])->name('movies.index');
+Route::get('/movies/{movie:slug}', [MovieController::class, 'show'])->name('movies.show');
+Route::get('/movies/{movie:slug}/showtimes', [MovieController::class, 'showtimes'])->name('movies.showtimes');
+
+// Bookings (seat plan + checkout)
+Route::get('/showtimes/{showtime}/seats', [BookingController::class, 'seats'])->name('showtimes.seats');
+Route::post('/showtimes/{showtime}/seats', [BookingController::class, 'storeSeats'])->name('showtimes.seats.store')->middleware('auth');
+Route::get('/checkout/movie/{booking}', [CheckoutController::class, 'movie'])->name('checkout.movie')->middleware('auth');
+Route::get('/checkout/event/{booking}', [CheckoutController::class, 'event'])->name('checkout.event')->middleware('auth');
+Route::get('/checkout/sport/{booking}', [CheckoutController::class, 'sport'])->name('checkout.sport')->middleware('auth');
+Route::post('/checkout/{booking}/confirm', [CheckoutController::class, 'confirm'])->name('checkout.confirm')->middleware(['auth', 'throttle:payments']);
+Route::get('/payment/callback/{booking}', [CheckoutController::class, 'paymentCallback'])->name('payment.callback')->middleware('auth');
+Route::get('/bookings/{booking}/ticket', [CheckoutController::class, 'ticket'])->name('bookings.ticket')->middleware('auth');
+
+// Seat availability + atomic locking API (session-based; BookMyShow Phase 2.1/2.2)
+Route::prefix('api')->name('api.')->group(function () {
+    Route::get('/showtimes/{showtime}/seats', [SeatController::class, 'index'])->name('seats.index');
+    Route::middleware('auth')->group(function () {
+        Route::post('/bookings/lock', [SeatController::class, 'lock'])->middleware('throttle:seat-lock')->name('seats.lock');
+        Route::delete('/bookings/lock', [SeatController::class, 'release'])->name('seats.release');
+        Route::post('/bookings/extend-lock', [SeatController::class, 'extend'])->name('seats.extend');
+    });
+});
+
+// Events
+Route::get('/events', [EventController::class, 'index'])->name('events.index');
+Route::get('/events/{event:slug}', [EventController::class, 'show'])->name('events.show');
+Route::get('/events/{event:slug}/tickets', [EventController::class, 'tickets'])->name('events.tickets');
+Route::post('/events/{event:slug}/tickets', [EventController::class, 'storeTickets'])->name('events.tickets.store')->middleware('auth');
+
+// Speakers
+Route::get('/speakers/{speaker}', [SpeakerController::class, 'show'])->name('speakers.show');
+
+// Sports
+Route::get('/sports', [SportController::class, 'index'])->name('sports.index');
+Route::get('/sports/{sport:slug}', [SportController::class, 'show'])->name('sports.show');
+Route::get('/sports/{sport:slug}/tickets', [SportController::class, 'tickets'])->name('sports.tickets');
+Route::post('/sports/{sport:slug}/tickets', [SportController::class, 'storeTickets'])->name('sports.tickets.store')->middleware('auth');
+
+// Blog
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{post:slug}', [BlogController::class, 'show'])->name('blog.show');
+Route::post('/blog/{post:slug}/comment', [BlogController::class, 'storeComment'])->name('blog.comment');
+
+// Static pages
+Route::get('/about', [PageController::class, 'about'])->name('about');
+Route::get('/apps', [PageController::class, 'apps'])->name('apps');
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+Route::get('/popcorn', [PopcornController::class, 'index'])->name('popcorn');
+
+// Newsletter
+Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
+
+// Search / availability API for live home dropdowns
+Route::prefix('api')->name('api.')->group(function () {
+    Route::get('/search/movies', [\App\Http\Controllers\SearchController::class, 'movies'])->name('search.movies');
+    Route::get('/search/events', [\App\Http\Controllers\SearchController::class, 'events'])->name('search.events');
+    Route::get('/search/sports', [\App\Http\Controllers\SearchController::class, 'sports'])->name('search.sports');
+    Route::get('/availability/movie/{movie:slug}', [\App\Http\Controllers\SearchController::class, 'movieAvailability'])->name('availability.movie');
+    Route::get('/availability/event/{event:slug}', [\App\Http\Controllers\SearchController::class, 'eventAvailability'])->name('availability.event');
+    Route::get('/availability/sport/{sport:slug}', [\App\Http\Controllers\SearchController::class, 'sportAvailability'])->name('availability.sport');
+});
+
+// Customer account area
+Route::middleware('auth')->prefix('account')->name('account.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Account\AccountController::class, 'dashboard'])->name('dashboard');
+    Route::get('/bookings', [\App\Http\Controllers\Account\BookingController::class, 'index'])->name('bookings.index');
+    Route::get('/bookings/{booking}', [\App\Http\Controllers\Account\BookingController::class, 'show'])->name('bookings.show');
+    Route::post('/bookings/{booking}/cancel', [\App\Http\Controllers\Account\BookingController::class, 'cancel'])->name('bookings.cancel');
+    Route::get('/profile', [\App\Http\Controllers\Account\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [\App\Http\Controllers\Account\ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [\App\Http\Controllers\Account\ProfileController::class, 'password'])->name('profile.password');
+});
+
+// Auth
+Route::middleware('guest')->group(function () {
+    // Customer
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
+
+    // Admin (separate page)
+    Route::get('/admin/login', [AuthController::class, 'showAdminLogin'])->name('admin.login');
+    Route::post('/admin/login', [AuthController::class, 'adminLogin'])->middleware('throttle:login');
+});
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+
+// Admin (loaded from separate file)
+require __DIR__ . '/admin.php';
+
+// Fallback 404
+Route::fallback(fn () => response()->view('errors.404', [], 404));
