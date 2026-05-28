@@ -1,78 +1,108 @@
 @extends('layouts.frontend')
 
+@php
+    $bannerImg = $sport->banner_image
+        ? (str_starts_with($sport->banner_image, 'assets/') ? asset($sport->banner_image) : asset('storage/' . $sport->banner_image))
+        : asset('assets/images/banner/banner10.jpg');
+    $matchup = $sport->team_home && $sport->team_away ? $sport->team_home . ' vs ' . $sport->team_away : $sport->title;
+@endphp
+
 @section('content')
-<!-- ==========Sports-Details-Banner========== -->
-    <section class="details-banner event-details-banner hero-area bg_img seat-plan-banner style-two" data-background="{{ asset('assets/images/banner/banner10.jpg') }}">
+    <section class="details-banner event-details-banner hero-area bg_img seat-plan-banner style-two" data-background="{{ $bannerImg }}">
         <div class="container">
             <div class="details-banner-wrapper">
                 <div class="details-banner-content style-two">
-                    <h3 class="title"><span class="d-block">football league</span> 
-                        <span class="d-block">tournament</span></h3>
-                    <div class="tags">
-                        <span>17 South Sherman Street Astoria, NY 11106</span>
-                    </div>
+                    <h3 class="title">{{ $matchup }}</h3>
+                    <div class="tags"><span>{{ $sport->venue }}</span></div>
                 </div>
             </div>
         </div>
     </section>
-    <!-- ==========Sports-Details-Banner========== -->
 
-    <!-- ==========Page-Title========== -->
-    <section class="page-title bg-one">
-        <div class="container">
-            <div class="page-title-area">
-                <div class="item md-order-1">
-                    <a href="#0" class="custom-button back-button">
-                        <i class="flaticon-double-right-arrows-angles"></i>back
-                    </a>
-                </div>
-                <div class="item date-item">
-                    <span class="date">MON, SEP 09 2020</span>
-                </div>
-                <div class="item">
-                    <h5 class="title">05:00</h5>
-                    <p>Mins Left</p>
-                </div>
-            </div>
+    <section class="page-title bg-one"><div class="container"><div class="page-title-area">
+        <div class="item md-order-1">
+            <a href="{{ route('sports.show', $sport->slug) }}" class="custom-button back-button"><i class="flaticon-double-right-arrows-angles"></i>back</a>
         </div>
-    </section>
-    <!-- ==========Page-Title========== -->
+        <div class="item date-item">
+            <span class="date">{{ \Carbon\Carbon::parse($sport->sport_date)->format('D, M d Y') }}</span>
+            @if ($sport->start_time)<span class="ml-3">{{ \Carbon\Carbon::parse($sport->start_time)->format('H:i') }}</span>@endif
+        </div>
+    </div></div></section>
 
-    <!-- ==========Event-Section========== -->
     <div class="event-facility padding-bottom padding-top">
-        <div class="container"><div class="section-header-3">
-            <span class="cate">simple pricing</span>
-            <h2 class="title">make an appointment</h2>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor ut labore et dolore magna aliqua. Quis ipsum suspendisse ultrices gravida</p>
-        </div>
-            <div class="row justify-content-center mb-30-none">
-                <div class="col-sm-6 col-md-4">
-                    <div class="sports-ticket">
-                        <span class="cate">best view</span>
-                        <h2 class="ticket-title"><sup>$</sup>50</h2>
-                        <p>Total Seats: <span>900</span></p>
-                        <a href="sports-checkout.html" class="custom-button">proceed</a>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-md-4">
-                    <div class="sports-ticket">
-                        <span class="cate">comfort zone</span>
-                        <h2 class="ticket-title"><sup>$</sup>79</h2>
-                        <p>Total Seats: <span>900</span></p>
-                        <a href="sports-checkout.html" class="custom-button">proceed</a>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-md-4">
-                    <div class="sports-ticket">
-                        <span class="cate">single tickets</span>
-                        <h2 class="ticket-title"><sup>$</sup>99</h2>
-                        <p>Total Seats: <span>900</span></p>
-                        <a href="sports-checkout.html" class="custom-button">proceed</a>
-                    </div>
-                </div>
+        <div class="container">
+            <div class="section-header-3">
+                <span class="cate">choose your tickets</span>
+                <h2 class="title">{{ $matchup }}</h2>
             </div>
+
+            @if ($errors->any())
+                <div class="alert alert-danger">@foreach ($errors->all() as $e)<div>{{ $e }}</div>@endforeach</div>
+            @endif
+
+            <form method="POST" action="{{ route('sports.tickets.store', $sport->slug) }}" id="ticket-form">
+                @csrf
+                <div class="row justify-content-center mb-30-none">
+                    @forelse ($sport->tickets as $ticket)
+                        @php $available = $ticket->quantity_total - $ticket->quantity_sold; @endphp
+                        <div class="col-md-6 col-lg-4 col-sm-10">
+                            <div class="ticket--item" style="padding-bottom:24px;">
+                                <div class="ticket-content">
+                                    <span class="ticket-title">{{ $ticket->type }}</span>
+                                    <h2 class="amount" data-price="{{ $ticket->price }}"><sup>$</sup>{{ number_format($ticket->price, 0) }}</h2>
+                                    <ul>
+                                        <li>{{ $available > 0 ? $available . ' tickets available' : 'Sold out' }}</li>
+                                    </ul>
+                                    <div class="d-flex align-items-center justify-content-center" style="gap:10px;margin-top:10px;">
+                                        <label class="text-white m-0">Qty</label>
+                                        <input type="number" name="qty[{{ $ticket->id }}]" class="qty-input"
+                                               min="0" max="{{ min($available, 20) }}" value="0"
+                                               {{ $available < 1 ? 'disabled' : '' }}
+                                               style="width:80px;text-align:center;border-radius:6px;padding:6px;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="col-12 text-center text-white">No tickets available for this match yet.</div>
+                    @endforelse
+                </div>
+
+                @if ($sport->tickets->count())
+                    <div class="text-center mt-4" style="color:#fff;">
+                        <h4>Total: $<span id="ticket-total">0.00</span></h4>
+                        @auth
+                            <button type="submit" class="custom-button mt-2" id="proceed-btn" disabled>Proceed to Checkout</button>
+                        @else
+                            <a href="{{ route('login') }}" class="custom-button mt-2">Login to Book</a>
+                        @endauth
+                    </div>
+                @endif
+            </form>
         </div>
     </div>
-    <!-- ==========Event-Section========== -->
-@endsection
 
+    @push('scripts')
+    <script>
+        (function () {
+            const form = document.getElementById('ticket-form');
+            if (!form) return;
+            const inputs = [...form.querySelectorAll('.qty-input')];
+            const totalEl = document.getElementById('ticket-total');
+            const btn = document.getElementById('proceed-btn');
+            function recalc() {
+                let total = 0, count = 0;
+                inputs.forEach(i => {
+                    const price = parseFloat(i.closest('.ticket-content').querySelector('.amount').dataset.price) || 0;
+                    const q = parseInt(i.value, 10) || 0;
+                    total += price * q; count += q;
+                });
+                totalEl.textContent = total.toFixed(2);
+                if (btn) btn.disabled = count === 0;
+            }
+            inputs.forEach(i => i.addEventListener('input', recalc));
+            recalc();
+        })();
+    </script>
+    @endpush
+@endsection

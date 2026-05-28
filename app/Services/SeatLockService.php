@@ -6,64 +6,51 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Atomic seat locking — the Laravel-native equivalent of the BookMyShow
- * "Redis SET NX EX 300" rule.
+ * Atomic seat locking — the Laravel-native equivalent of BookMyShow's
+ * "Redis SET NX EX 300" rule, using Laravel atomic locks (cache_locks table).
  *
- * We use Laravel's atomic locks (Cache::lock), which are backed by the
- * `cache_locks` table when CACHE_STORE=database (and would transparently use
- * Redis if the cache store were Redis). Each lock is an all-or-nothing claim on
- * a set of seats for one showtime, held for a 5-minute TTL and owned by the
- * acquiring session/user so only they can release or confirm it.
+ * Polymorphic: a "context" string identifies what the seats belong to, so the
+ * same engine serves movies, events and sports:
+ *     showtime:12   event:3   sport:5
  *
- * Lock key pattern:  seat:{showtimeId}:{ROW}-{NUMBER}
- *
- * Example:
- *   $svc->lock(12, ['A-1','A-2'], 'sess_abc');
- *   // => ['ok'=>true,'expiresAt'=>'2026-05-19T12:05:00Z','lockedSeats'=>['A-1','A-2']]
+ * Lock key pattern:  seat:{context}:{ROW}-{NUMBER}
  */
 class SeatLockService
 {
-    /** Lock lifetime in seconds (5 minutes — matches the guide's TTL). */
+    /** Lock lifetime in seconds (5 minutes). */
     public const TTL = 300;
 
-    /** Build the canonical cache key for one seat of one showtime. */
-    public function key(int $showtimeId, string $seatId): string
+    public function key(string $context, string $seatId): string
     {
-        return "seat:{$showtimeId}:" . strtoupper($seatId);
+        return "seat:{$context}:" . strtoupper($seatId);
     }
 
     /**
-     * Atomically lock every seat in $seatIds for $showtimeId, owned by $owner.
-     * All-or-rollback: if any seat is already held by someone else, every lock
-     * acquired in this call is released and the method reports failure.
+     * Atomically lock every seat for $context, owned by $owner. All-or-rollback.
      *
-     * @param  string[]  $seatIds  e.g. ['A-1','A-2'] (ROW-NUMBER)
+     * @param  string[]  $seatIds  e.g. ['A-1','A-2']
      * @return array{ok:bool, lockedSeats?:array, conflict?:string, expiresAt?:string}
      */
-    public function lock(int $showtimeId, array $seatIds, string $owner): array
+    public function lock(string $context, array $seatIds, string $owner): array
     {
         $seatIds = array_values(array_unique(array_map('strtoupper', $seatIds)));
         $acquired = [];
 
         foreach ($seatIds as $seatId) {
-            $lock = Cache::lock($this->key($showtimeId, $seatId), self::TTL, $owner);
+            $lock = Cache::lock($this->key($context, $seatId), self::TTL, $owner);
 
             if ($lock->get()) {
                 $acquired[] = $seatId;
                 continue;
             }
 
-            // get() can return false for a seat we ALREADY own: re-acquiring in the
-            // same second is a no-op UPDATE (0 affected rows in MySQL). Treat a lock
-            // already held by this same owner as successfully held (idempotent).
-            if ($this->currentOwnerOf($showtimeId, $seatId) === $owner) {
+            // Same-owner re-lock is idempotent (MySQL no-op UPDATE returns 0 rows).
+            if ($this->currentOwnerOf($context, $seatId) === $owner) {
                 $acquired[] = $seatId;
                 continue;
             }
 
-            // Conflict: someone else holds this seat. Roll back everything.
-            $this->release($showtimeId, $acquired, $owner);
-
+            $this->release($context, $acquired, $owner);
             return ['ok' => false, 'conflict' => $seatId];
         }
 
@@ -74,53 +61,34 @@ class SeatLockService
         ];
     }
 
-    /**
-     * Release the given seats, but only if owned by $owner (safe restore via
-     * the stored owner token — you cannot release someone else's lock).
-     *
-     * @param  string[]  $seatIds
-     */
-    public function release(int $showtimeId, array $seatIds, string $owner): void
+    /** @param string[] $seatIds */
+    public function release(string $context, array $seatIds, string $owner): void
     {
         foreach ($seatIds as $seatId) {
-            // Restoring with the owner token lets us call release() without
-            // having the original lock object instance.
-            Cache::restoreLock($this->key($showtimeId, strtoupper($seatId)), $owner)->release();
+            Cache::restoreLock($this->key($context, strtoupper($seatId)), $owner)->release();
         }
     }
 
-    /**
-     * Re-acquire (extend) locks for another full TTL — used while the user is
-     * still on the checkout page. Returns false if any seat was lost to expiry
-     * and could not be re-grabbed (someone else took it).
-     *
-     * @param  string[]  $seatIds
-     */
-    public function extend(int $showtimeId, array $seatIds, string $owner): bool
+    /** @param string[] $seatIds */
+    public function extend(string $context, array $seatIds, string $owner): bool
     {
-        $result = $this->lock($showtimeId, $seatIds, $owner);
-        return $result['ok'];
+        return $this->lock($context, $seatIds, $owner)['ok'];
     }
 
-    /** True if the seat currently has an active (unexpired) lock held by anyone. */
-    public function isLocked(int $showtimeId, string $seatId): bool
+    public function isLocked(string $context, string $seatId): bool
     {
-        return ! $this->probeFree($showtimeId, strtoupper($seatId));
+        return ! $this->probeFree($context, strtoupper($seatId));
     }
 
     /**
-     * Return the set of seat IDs currently locked for a showtime by scanning
-     * the cache_locks table directly (DB cache store). Falls back to an empty
-     * set on non-database stores; callers should treat absence as "available".
+     * Map of SEATID => owner-token for all active locks in this context.
      *
-     * @return array<string,bool>  map of SEATID => owner-token (for "is it mine")
+     * @return array<string,string>
      */
-    public function lockedSeatMap(int $showtimeId): array
+    public function lockedSeatMap(string $context): array
     {
-        $prefix = "seat:{$showtimeId}:";
+        $prefix = "seat:{$context}:";
 
-        // The database cache lock store prefixes keys; match on our pattern.
-        // We read raw rows so we can also expose the owner token per seat.
         $rows = DB::table('cache_locks')
             ->where('key', 'like', '%' . $prefix . '%')
             ->where('expiration', '>=', now()->getTimestamp())
@@ -139,22 +107,18 @@ class SeatLockService
         return $map;
     }
 
-    /** Internal: cheap free-probe without holding the lock. */
-    private function probeFree(int $showtimeId, string $seatId): bool
+    private function probeFree(string $context, string $seatId): bool
     {
-        $row = DB::table('cache_locks')
-            ->where('key', 'like', '%' . $this->key($showtimeId, $seatId))
+        return DB::table('cache_locks')
+            ->where('key', 'like', '%' . $this->key($context, $seatId))
             ->where('expiration', '>=', now()->getTimestamp())
-            ->first();
-
-        return $row === null;
+            ->first() === null;
     }
 
-    /** The owner token currently holding this seat, or null if free/expired. */
-    private function currentOwnerOf(int $showtimeId, string $seatId): ?string
+    private function currentOwnerOf(string $context, string $seatId): ?string
     {
         $row = DB::table('cache_locks')
-            ->where('key', 'like', '%' . $this->key($showtimeId, $seatId))
+            ->where('key', 'like', '%' . $this->key($context, $seatId))
             ->where('expiration', '>=', now()->getTimestamp())
             ->first(['owner']);
 

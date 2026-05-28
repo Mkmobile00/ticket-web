@@ -41,7 +41,7 @@
 								<p class="seco_text">sec</p>
 							</li>
 						</ul>
-                        <a href="#0" class="custom-button">book tickets</a>
+                        <a href="{{ route('events.tickets', $event->slug) }}" class="custom-button">book tickets</a>
                     </div>
                 </div>
                 <div class="event-search-bottom">
@@ -118,7 +118,7 @@
                             <h2 class="title">Digital Marketing Conference - <span>2020</span></h2>
                             <p>Morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, tristique senectus et netus et malesuada fames ac turpis egestas ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper.Aenean ultricies mi vitae est. Mauris Eonec eu ribero sit amet quam egestas semper. Aenean are ultricies mi senectus et netus et malesuada fames ac turpis egestas.
                             </p>
-                            <a href="#0" class="custom-button">book tickets</a>
+                            <a href="{{ route('events.tickets', $event->slug) }}" class="custom-button">book tickets</a>
                         </div>
                     </div>
                 </div>

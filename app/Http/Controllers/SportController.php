@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sport;
+use App\Services\SeatBookingService;
 use Illuminate\Http\Request;
 
 class SportController extends Controller
 {
+    public function __construct(private SeatBookingService $booker) {}
+
     public function index(Request $request)
     {
         $query = Sport::whereIn('status', ['upcoming', 'active', 'live'])
@@ -43,11 +46,41 @@ class SportController extends Controller
     public function tickets(Sport $sport)
     {
         $sport->load('tickets');
-        return view('sports.tickets', compact('sport'));
+        $matchup = $sport->team_home && $sport->team_away ? $sport->team_home . ' vs ' . $sport->team_away : $sport->title;
+        return view('bookings.seat-plan', [
+            'seatable' => $sport,
+            'kind' => 'sport',
+            'title' => $matchup,
+            'subtitle' => $sport->venue ?? '',
+            'dateLine' => \Carbon\Carbon::parse($sport->sport_date)->format('D, M d Y')
+                . ($sport->start_time ? ' · ' . \Carbon\Carbon::parse($sport->start_time)->format('H:i') : ''),
+            'bannerImg' => $this->banner($sport->banner_image, 'banner10.jpg'),
+            'storeUrl' => route('sports.tickets.store', $sport->slug),
+        ]);
     }
 
-    public function storeTickets(Sport $sport)
+    public function storeTickets(Request $request, Sport $sport)
     {
-        return redirect()->route('sports.show', $sport)->with('status', 'Tickets reserved (demo).');
+        $data = $request->validate([
+            'seats' => 'required|array|min:1|max:10',
+            'seats.*' => 'string|regex:/^[A-Za-z]{1,2}-\d{1,3}$/',
+        ]);
+
+        $booking = $this->booker->reserve(
+            $sport->load('tickets'),
+            $data['seats'],
+            (int) auth()->id(),
+            'sess:' . $request->session()->getId(),
+        );
+
+        return redirect()->route('checkout.sport', $booking);
+    }
+
+    private function banner(?string $img, string $fallback): string
+    {
+        if (! $img) {
+            return asset('assets/images/banner/' . $fallback);
+        }
+        return str_starts_with($img, 'assets/') ? asset($img) : asset('storage/' . $img);
     }
 }

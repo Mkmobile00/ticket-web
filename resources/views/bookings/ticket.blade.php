@@ -2,9 +2,29 @@
 
 @php
     $st = $booking->showtime;
+    $isMovie = (bool) $st;
     $movie = $st?->movie;
     $cinema = $st?->screen?->cinema;
     $seats = $booking->seats->map(fn ($s) => $s->seat_row . $s->seat_number)->implode(', ');
+
+    // Event/sport (non-seat) bookings.
+    $subject = $booking->bookable;
+    if ($isMovie) {
+        $ticketTitle = $movie->title ?? 'Ticket';
+        $ticketSub = ($cinema->name ?? '') . ($st?->screen?->name ? ' — ' . $st->screen->name : '');
+        $ticketDate = \Carbon\Carbon::parse($st->show_date)->format('D, M d Y');
+        $ticketTime = \Carbon\Carbon::parse($st->show_time)->format('H:i');
+    } elseif ($subject instanceof \App\Models\Sport) {
+        $ticketTitle = $subject->team_home && $subject->team_away ? $subject->team_home . ' vs ' . $subject->team_away : $subject->title;
+        $ticketSub = $subject->venue ?? '';
+        $ticketDate = \Carbon\Carbon::parse($subject->sport_date)->format('D, M d Y');
+        $ticketTime = $subject->start_time ? \Carbon\Carbon::parse($subject->start_time)->format('H:i') : '—';
+    } else { // Event
+        $ticketTitle = $subject->title ?? 'Ticket';
+        $ticketSub = $subject->address ?? $subject->organizer ?? '';
+        $ticketDate = $subject?->event_date ? \Carbon\Carbon::parse($subject->event_date)->format('D, M d Y') : '—';
+        $ticketTime = $subject?->start_time ? \Carbon\Carbon::parse($subject->start_time)->format('H:i') : '—';
+    }
 @endphp
 
 @section('content')
@@ -24,8 +44,8 @@
                 <div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.25);color:#1f2329;">
                     <div style="background:linear-gradient(135deg,#ff5046,#ff8a3d);color:#fff;padding:24px 28px;display:flex;justify-content:space-between;align-items:center;">
                         <div>
-                            <h3 style="margin:0;font-weight:800;">{{ $movie->title ?? 'Ticket' }}</h3>
-                            <span style="opacity:.9;">{{ $cinema->name ?? '' }} {{ $st?->screen?->name ? '— ' . $st->screen->name : '' }}</span>
+                            <h3 style="margin:0;font-weight:800;">{{ $ticketTitle }}</h3>
+                            <span style="opacity:.9;">{{ $ticketSub }}</span>
                         </div>
                         <span style="background:rgba(255,255,255,.2);padding:6px 14px;border-radius:20px;font-weight:700;">CONFIRMED</span>
                     </div>
@@ -33,8 +53,8 @@
                     <div style="display:flex;flex-wrap:wrap;gap:24px;padding:28px;">
                         <div style="flex:1 1 280px;">
                             <table style="width:100%;border-collapse:collapse;font-size:15px;">
-                                <tr><td style="padding:8px 0;color:#777;">Date</td><td style="padding:8px 0;text-align:right;font-weight:600;">{{ $st ? \Carbon\Carbon::parse($st->show_date)->format('D, M d Y') : '—' }}</td></tr>
-                                <tr><td style="padding:8px 0;color:#777;">Time</td><td style="padding:8px 0;text-align:right;font-weight:600;">{{ $st ? \Carbon\Carbon::parse($st->show_time)->format('H:i') : '—' }}</td></tr>
+                                <tr><td style="padding:8px 0;color:#777;">Date</td><td style="padding:8px 0;text-align:right;font-weight:600;">{{ $ticketDate }}</td></tr>
+                                <tr><td style="padding:8px 0;color:#777;">Time</td><td style="padding:8px 0;text-align:right;font-weight:600;">{{ $ticketTime }}</td></tr>
                                 <tr><td style="padding:8px 0;color:#777;">Seats</td><td style="padding:8px 0;text-align:right;font-weight:700;color:#ff5046;">{{ $seats }}</td></tr>
                                 <tr><td style="padding:8px 0;color:#777;">Tickets</td><td style="padding:8px 0;text-align:right;">{{ $booking->seats->count() }}</td></tr>
                                 <tr><td style="padding:8px 0;color:#777;">Paid via</td><td style="padding:8px 0;text-align:right;text-transform:capitalize;">{{ $booking->payment_method }}</td></tr>

@@ -17,7 +17,9 @@ class SendBookingConfirmationNotification
 {
     public function handle(BookingConfirmed $event): void
     {
-        $booking = $event->booking->loadMissing(['user', 'showtime.movie', 'showtime.screen.cinema', 'seats']);
+        $booking = $event->booking->loadMissing([
+            'user', 'showtime.movie', 'showtime.screen.cinema', 'seats', 'items', 'bookable',
+        ]);
 
         // 1) Email (works today via the "log" mailer).
         try {
@@ -29,10 +31,12 @@ class SendBookingConfirmationNotification
         }
 
         // 2) SMS stub — replace with Twilio/Sparrow SMS in production.
-        $seats = $booking->seats->map(fn ($s) => $s->seat_row . $s->seat_number)->implode(', ');
+        $detail = $booking->showtime
+            ? 'Seats: ' . $booking->seats->map(fn ($s) => $s->seat_row . $s->seat_number)->implode(', ')
+            : $booking->items->map(fn ($i) => $i->quantity . '× ' . $i->label)->implode(', ');
         Log::info('SMS (stub) booking confirmation', [
             'to' => $booking->user?->phone,
-            'text' => "Booking #{$booking->id} confirmed. Seats: {$seats}. Show your QR at entry.",
+            'text' => "Booking #{$booking->id} confirmed. {$detail}. Show your QR at entry.",
         ]);
     }
 }

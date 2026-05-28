@@ -9,7 +9,14 @@ class BookingSeat extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['booking_id', 'ticket_class_id', 'showtime_id', 'seat_row', 'seat_number'];
+    protected $fillable = [
+        'booking_id', 'ticket_class_id', 'showtime_id',
+        'seatable_type', 'seatable_id', 'seat_row', 'seat_number', 'price', 'tier_label',
+    ];
+
+    protected $casts = [
+        'price' => 'decimal:2',
+    ];
 
     public function booking()
     {
@@ -19,6 +26,12 @@ class BookingSeat extends Model
     public function showtime()
     {
         return $this->belongsTo(Showtime::class);
+    }
+
+    /** What these seats belong to: Showtime (movie), Event, or Sport. */
+    public function seatable()
+    {
+        return $this->morphTo();
     }
 
     public function ticketClass()

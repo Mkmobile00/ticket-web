@@ -41,7 +41,7 @@
 								<p class="seco_text">sec</p>
 							</li>
 						</ul>
-                        <a href="sports-checkout.html" class="custom-button">book tickets</a>
+                        <a href="{{ route('sports.tickets', $sport->slug) }}" class="custom-button">book tickets</a>
                     </div>
                 </div>
                 <div class="event-search-bottom">
@@ -109,7 +109,7 @@
                             <h2 class="title">football league tournament</h2>
                             <p>Morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, tristique senectus et netus et malesuada fames ac turpis egestas ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper.Aenean ultricies mi vitae est. Mauris Eonec eu ribero sit amet quam egestas semper. Aenean are ultricies mi senectus et netus et malesuada fames ac turpis egestas.
                             </p>
-                            <a href="sports-checkout.html" class="custom-button">book tickets</a>
+                            <a href="{{ route('sports.tickets', $sport->slug) }}" class="custom-button">book tickets</a>
                         </div>
                     </div>
                 </div>

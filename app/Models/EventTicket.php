@@ -9,10 +9,11 @@ class EventTicket extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['event_id', 'type', 'price', 'quantity_total', 'quantity_sold'];
+    protected $fillable = ['event_id', 'type', 'price', 'quantity_total', 'quantity_sold', 'seat_rows'];
 
     protected $casts = [
         'price' => 'decimal:2',
+        'seat_rows' => 'array',
     ];
 
     public function event()

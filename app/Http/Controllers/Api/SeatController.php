@@ -3,143 +3,144 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Event;
 use App\Models\Showtime;
+use App\Models\Sport;
 use App\Services\SeatLockService;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
 /**
- * Seat availability + atomic seat-locking API (BookMyShow Phase 2.1 / 2.2),
- * implemented in Laravel.
+ * Polymorphic seat availability + atomic locking API for any "seatable"
+ * (Showtime / Event / Sport). One engine, three subjects.
  *
- *   GET    /api/showtimes/{showtime}/seats   -> layout + per-seat status
- *   POST   /api/bookings/lock                -> atomically lock seats (5-min TTL)
- *   DELETE /api/bookings/lock                -> release my locks
- *   POST   /api/bookings/extend-lock         -> refresh TTL while on checkout
+ *   GET    /api/seats/{type}/{id}   -> layout + per-seat status (+ tier/price)
+ *   POST   /api/seats/lock          -> atomically lock seats (5-min TTL)
+ *   DELETE /api/seats/lock          -> release my locks
+ *   POST   /api/seats/extend        -> refresh TTL while on checkout
+ *
+ * {type} ∈ showtime | event | sport
  */
 class SeatController extends Controller
 {
+    private const MAP = [
+        'showtime' => Showtime::class,
+        'event' => Event::class,
+        'sport' => Sport::class,
+    ];
+
     public function __construct(private SeatLockService $locks) {}
 
-    /**
-     * The lock "owner" token. Tied to the session so a user's own locks are
-     * recognised as theirs across requests/tabs in the same browser session.
-     */
     private function owner(Request $request): string
     {
         return 'sess:' . $request->session()->getId();
     }
 
-    /** Build [rows[], seats_per_row[]] from a screen's stored seat_layout JSON. */
-    private function layout(Showtime $showtime): array
+    /** Resolve a seatable model from "{type}/{id}", eager-loading what we need. */
+    private function resolve(string $type, int|string $id): ?Model
     {
-        $layout = $showtime->screen->seat_layout ?? null;
-        if (is_string($layout)) {
-            $layout = json_decode($layout, true);
+        $class = self::MAP[$type] ?? null;
+        if (! $class) {
+            return null;
         }
-        $rows = $layout['rows'] ?? ['A', 'B', 'C', 'D', 'E'];
-        $perRow = $layout['seats_per_row'] ?? array_fill(0, count($rows), 20);
-
-        return [$rows, $perRow];
+        $with = $type === 'showtime' ? ['screen', 'ticketClasses'] : ['tickets'];
+        return $class::with($with)->find($id);
     }
 
-    /**
-     * GET /api/showtimes/{showtime}/seats
-     *
-     * Response:
-     * {
-     *   "showtime_id": 12,
-     *   "rows": [
-     *     { "row": "A", "seats": [ {"id":"A-1","status":"available"}, ... ] }, ...
-     *   ],
-     *   "counts": {"available":78,"locked":2,"booked":20}
-     * }
-     * status ∈ available | locked | mine | booked
-     */
-    public function index(Request $request, Showtime $showtime)
+    /** Seats already taken in the DB (pending/confirmed) for a seatable. */
+    private function bookedMap(Model $seatable)
     {
-        [$rows, $perRow] = $this->layout($showtime);
-        $owner = $this->owner($request);
-
-        // Confirmed/pending seats = permanently/temporarily booked in DB.
-        $booked = $showtime->bookedSeats()
+        return \App\Models\BookingSeat::where('seatable_type', $seatable->getMorphClass())
+            ->where('seatable_id', $seatable->getKey())
             ->whereHas('booking', fn ($q) => $q->whereIn('status', ['pending', 'confirmed', 'completed']))
             ->get(['seat_row', 'seat_number'])
             ->map(fn ($s) => strtoupper($s->seat_row . '-' . $s->seat_number))
             ->flip();
+    }
 
-        // Active cache locks (someone is mid-checkout).
-        $lockMap = $this->locks->lockedSeatMap($showtime->id);
+    /** Build [ROW => ['name'=>..,'price'=>..]] lookup from a seatable's tiers. */
+    private function rowTierMap(Model $seatable): array
+    {
+        $map = [];
+        foreach ($seatable->seatTiers() as $tier) {
+            foreach ($tier['rows'] as $row) {
+                $map[strtoupper($row)] = ['name' => $tier['name'], 'price' => $tier['price']];
+            }
+        }
+        return $map;
+    }
+
+    /** GET /api/seats/{type}/{id} */
+    public function status(Request $request, string $type, int $id)
+    {
+        $seatable = $this->resolve($type, $id);
+        abort_unless($seatable, 404);
+
+        $layout = $seatable->seatLayoutArray();
+        $rows = $layout['rows'] ?: ['A', 'B', 'C', 'D', 'E'];
+        $perRow = $layout['seats_per_row'] ?: array_fill(0, count($rows), 20);
+
+        $owner = $this->owner($request);
+        $booked = $this->bookedMap($seatable);
+        $lockMap = $this->locks->lockedSeatMap($seatable->seatContext());
+        $tierByRow = $this->rowTierMap($seatable);
 
         $counts = ['available' => 0, 'locked' => 0, 'booked' => 0];
         $grid = [];
-
         foreach ($rows as $i => $row) {
+            $row = strtoupper($row);
+            $tier = $tierByRow[$row] ?? null;
             $seats = [];
             for ($n = 1; $n <= ($perRow[$i] ?? 0); $n++) {
-                $id = strtoupper($row . '-' . $n);
-
-                if ($booked->has($id)) {
+                $sid = $row . '-' . $n;
+                if ($booked->has($sid)) {
                     $status = 'booked';
                     $counts['booked']++;
-                } elseif (isset($lockMap[$id])) {
-                    $status = $lockMap[$id] === $owner ? 'mine' : 'locked';
+                } elseif (isset($lockMap[$sid])) {
+                    $status = $lockMap[$sid] === $owner ? 'mine' : 'locked';
                     $counts['locked']++;
                 } else {
                     $status = 'available';
                     $counts['available']++;
                 }
-
-                $seats[] = ['id' => $id, 'status' => $status];
+                $seats[] = [
+                    'id' => $sid,
+                    'status' => $status,
+                    'tier' => $tier['name'] ?? null,
+                    'price' => $tier['price'] ?? null,
+                ];
             }
-            $grid[] = ['row' => $row, 'seats' => $seats];
+            $grid[] = ['row' => $row, 'tier' => $tier['name'] ?? null, 'seats' => $seats];
         }
 
         return response()->json([
-            'showtime_id' => $showtime->id,
+            'context' => $seatable->seatContext(),
             'rows' => $grid,
+            'tiers' => $seatable->seatTiers()->values(),
             'counts' => $counts,
             'lock_ttl' => SeatLockService::TTL,
         ]);
     }
 
-    /**
-     * POST /api/bookings/lock
-     * Body: { showtime_id, seats: ["A-1","A-2"] }
-     */
-    public function lock(Request $request)
+    private function validateContext(Request $request): array
     {
-        $data = $request->validate([
-            'showtime_id' => 'required|integer|exists:showtimes,id',
+        return $request->validate([
+            'context' => 'required|regex:/^(showtime|event|sport):\d+$/',
             'seats' => 'required|array|min:1|max:10',
             'seats.*' => 'string|regex:/^[A-Za-z]{1,2}-\d{1,3}$/',
         ]);
+    }
 
-        $showtime = Showtime::findOrFail($data['showtime_id']);
-        $owner = $this->owner($request);
-
-        // Reject seats already confirmed/pending in the DB before touching locks.
-        $already = $showtime->bookedSeats()
-            ->whereHas('booking', fn ($q) => $q->whereIn('status', ['pending', 'confirmed', 'completed']))
-            ->get()
-            ->map(fn ($s) => strtoupper($s->seat_row . '-' . $s->seat_number))
-            ->flip();
-
-        foreach ($data['seats'] as $seat) {
-            if ($already->has(strtoupper($seat))) {
-                return response()->json([
-                    'ok' => false,
-                    'message' => "Seat {$seat} is already booked.",
-                    'conflict' => strtoupper($seat),
-                ], 409);
-            }
-        }
-
-        $result = $this->locks->lock($showtime->id, $data['seats'], $owner);
+    /** POST /api/seats/lock  Body: { context, seats:[] } */
+    public function lock(Request $request)
+    {
+        $data = $this->validateContext($request);
+        $result = $this->locks->lock($data['context'], $data['seats'], $this->owner($request));
 
         if (! $result['ok']) {
             return response()->json([
                 'ok' => false,
-                'message' => "Seat {$result['conflict']} was just taken by someone else.",
+                'message' => "Seat {$result['conflict']} was just taken.",
                 'conflict' => $result['conflict'],
             ], 409);
         }
@@ -152,31 +153,19 @@ class SeatController extends Controller
         ]);
     }
 
-    /** DELETE /api/bookings/lock  Body: { showtime_id, seats:[] } */
+    /** DELETE /api/seats/lock */
     public function release(Request $request)
     {
-        $data = $request->validate([
-            'showtime_id' => 'required|integer',
-            'seats' => 'required|array',
-            'seats.*' => 'string',
-        ]);
-
-        $this->locks->release($data['showtime_id'], $data['seats'], $this->owner($request));
-
+        $data = $this->validateContext($request);
+        $this->locks->release($data['context'], $data['seats'], $this->owner($request));
         return response()->json(['ok' => true]);
     }
 
-    /** POST /api/bookings/extend-lock  Body: { showtime_id, seats:[] } */
+    /** POST /api/seats/extend */
     public function extend(Request $request)
     {
-        $data = $request->validate([
-            'showtime_id' => 'required|integer',
-            'seats' => 'required|array',
-            'seats.*' => 'string',
-        ]);
-
-        $ok = $this->locks->extend($data['showtime_id'], $data['seats'], $this->owner($request));
-
+        $data = $this->validateContext($request);
+        $ok = $this->locks->extend($data['context'], $data['seats'], $this->owner($request));
         return response()->json([
             'ok' => $ok,
             'expiresAt' => $ok ? now()->addSeconds(SeatLockService::TTL)->toIso8601String() : null,

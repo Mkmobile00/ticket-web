@@ -27,14 +27,14 @@ class CheckoutController extends Controller
     public function event(Booking $booking)
     {
         $this->authorizeBooking($booking);
-        $booking->load('bookable');
+        $booking->load('bookable', 'seats');
         return view('checkout.event', compact('booking'));
     }
 
     public function sport(Booking $booking)
     {
         $this->authorizeBooking($booking);
-        $booking->load('bookable');
+        $booking->load('bookable', 'seats');
         return view('checkout.sport', compact('booking'));
     }
 
@@ -134,14 +134,17 @@ class CheckoutController extends Controller
         });
 
         // Release the seat locks now that the seats are permanently recorded.
-        if ($booking->showtime_id) {
+        $booking->loadMissing('seats');
+        $first = $booking->seats->first();
+        if ($first && $first->seatable_id) {
+            $context = strtolower(class_basename($first->seatable_type)) . ':' . $first->seatable_id;
             $owner = 'sess:' . $request->session()->getId();
             $seatIds = $booking->seats->map(fn ($s) => $s->seat_row . '-' . $s->seat_number)->all();
-            $this->locks->release($booking->showtime_id, $seatIds, $owner);
+            $this->locks->release($context, $seatIds, $owner);
         }
 
         // Publish the "booking.confirmed" event -> notifications.
-        BookingConfirmed::dispatch($booking->fresh(['seats', 'showtime.movie', 'showtime.screen.cinema', 'user']));
+        BookingConfirmed::dispatch($booking->fresh(['seats', 'showtime.movie', 'showtime.screen.cinema', 'user', 'items', 'bookable']));
 
         return redirect()->route('bookings.ticket', $booking)
             ->with('status', 'Payment successful! Booking #' . $booking->id . ' confirmed.');
@@ -152,7 +155,7 @@ class CheckoutController extends Controller
     {
         $this->authorizeBooking($booking);
         abort_unless($booking->status === 'confirmed', 404);
-        $booking->load(['seats.ticketClass', 'showtime.movie', 'showtime.screen.cinema', 'user']);
+        $booking->load(['seats.ticketClass', 'showtime.movie', 'showtime.screen.cinema', 'user', 'items', 'bookable']);
         return view('bookings.ticket', compact('booking'));
     }
 

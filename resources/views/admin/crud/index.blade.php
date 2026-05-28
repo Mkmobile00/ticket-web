@@ -5,6 +5,7 @@
 @php $routePrefix = 'admin.' . Str::plural($resource); @endphp
 
 @section('content')
+@include('admin.partials.section-help')
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="m-0">{{ $title }}</h4>
     <a href="{{ route($routePrefix . '.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Create</a>

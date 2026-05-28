@@ -55,4 +55,10 @@ class Booking extends Model
     {
         return $this->hasMany(BookingAddon::class);
     }
+
+    /** Quantity-based line items (event/sport ticket types). */
+    public function items()
+    {
+        return $this->hasMany(BookingItem::class);
+    }
 }

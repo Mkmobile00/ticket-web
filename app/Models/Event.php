@@ -2,23 +2,40 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Seatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Event extends Model
 {
-    use HasFactory;
+    use HasFactory, Seatable;
 
     protected $fillable = [
         'title', 'slug', 'description', 'banner_image', 'event_date',
-        'start_time', 'end_time', 'address', 'organizer', 'latitude', 'longitude', 'status'
+        'start_time', 'end_time', 'address', 'organizer', 'latitude', 'longitude', 'status', 'seat_layout'
     ];
 
     protected $casts = [
         'event_date' => 'date',
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
+        'seat_layout' => 'array',
     ];
+
+    /** ['rows'=>[], 'seats_per_row'=>[]] for the seat map. */
+    public function seatLayoutArray(): array
+    {
+        $l = $this->seat_layout ?: [];
+        return ['rows' => $l['rows'] ?? [], 'seats_per_row' => $l['seats_per_row'] ?? []];
+    }
+
+    /** Price tiers (ticket types) mapped to seat rows. */
+    public function seatTiers()
+    {
+        return $this->tickets->map(fn ($t) => [
+            'id' => $t->id, 'name' => $t->type, 'price' => (float) $t->price, 'rows' => (array) $t->seat_rows,
+        ]);
+    }
 
     public function categories()
     {

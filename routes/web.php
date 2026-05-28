@@ -43,13 +43,13 @@ Route::post('/checkout/{booking}/confirm', [CheckoutController::class, 'confirm'
 Route::get('/payment/callback/{booking}', [CheckoutController::class, 'paymentCallback'])->name('payment.callback')->middleware('auth');
 Route::get('/bookings/{booking}/ticket', [CheckoutController::class, 'ticket'])->name('bookings.ticket')->middleware('auth');
 
-// Seat availability + atomic locking API (session-based; BookMyShow Phase 2.1/2.2)
+// Polymorphic seat availability + atomic locking API (movies/events/sports)
 Route::prefix('api')->name('api.')->group(function () {
-    Route::get('/showtimes/{showtime}/seats', [SeatController::class, 'index'])->name('seats.index');
+    Route::get('/seats/{type}/{id}', [SeatController::class, 'status'])->name('seats.status');
     Route::middleware('auth')->group(function () {
-        Route::post('/bookings/lock', [SeatController::class, 'lock'])->middleware('throttle:seat-lock')->name('seats.lock');
-        Route::delete('/bookings/lock', [SeatController::class, 'release'])->name('seats.release');
-        Route::post('/bookings/extend-lock', [SeatController::class, 'extend'])->name('seats.extend');
+        Route::post('/seats/lock', [SeatController::class, 'lock'])->middleware('throttle:seat-lock')->name('seats.lock');
+        Route::delete('/seats/lock', [SeatController::class, 'release'])->name('seats.release');
+        Route::post('/seats/extend', [SeatController::class, 'extend'])->name('seats.extend');
     });
 });
 

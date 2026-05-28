@@ -40,6 +40,7 @@
 @endpush
 
 @section('content')
+@include('admin.partials.section-help')
 <div class="card">
     <div class="card-body">
         <form method="POST" action="{{ $item->exists ? route($routePrefix . '.update', $item->id) : route($routePrefix . '.store') }}" enctype="multipart/form-data">
@@ -132,14 +133,17 @@
                             $selected = array_map('strtoupper', (array) $selected);
                         @endphp
                         <div class="row-picker">
-                            @foreach (range('A', 'Z') as $letter)
+                            @foreach (($field['rows'] ?? range('A', 'Z')) as $letter)
                                 <label class="row-chip">
                                     <input type="checkbox" name="{{ $name }}[]" value="{{ $letter }}" @checked(in_array($letter, $selected))>
                                     <span>{{ $letter }}</span>
                                 </label>
                             @endforeach
                         </div>
-                        <div class="row-picker-help">Click letters to choose which seat rows belong to this ticket class.</div>
+                        <div class="row-picker-help">
+                            Tick the seat rows that get this price. Only rows that exist on this showtime&rsquo;s screen are shown.
+                            Customers sitting in these rows pay the price above.
+                        </div>
                     @elseif ($type === 'textarea')
                         <textarea class="form-control" name="{{ $name }}" rows="5">{{ $value }}</textarea>
                     @elseif ($type === 'select')

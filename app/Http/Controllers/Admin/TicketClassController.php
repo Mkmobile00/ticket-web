@@ -13,18 +13,38 @@ class TicketClassController extends AdminController
     protected string $modelClass = \App\Models\TicketClass::class;
     protected string $resource = 'ticket-class';
 
+    /** Seat rows available on the current ticket class's showtime screen. */
+    protected ?array $seatRows = null;
+
     protected function fields(): array
     {
         $fields = parent::fields();
         foreach ($fields as &$f) {
             if ($f['name'] === 'seat_rows') {
                 $f['type'] = 'rows';
+                if ($this->seatRows) {
+                    $f['rows'] = $this->seatRows; // only show rows the screen actually has
+                }
             }
             if ($f['name'] === 'showtime_id') {
                 $f['options'] = $this->showtimeOptions();
             }
         }
         return $fields;
+    }
+
+    /** Rows that physically exist on a showtime's screen, plus any already-selected. */
+    private function rowsFor(?Showtime $showtime, array $selected = []): ?array
+    {
+        $layout = $showtime?->screen?->seat_layout;
+        $rows = is_array($layout) ? ($layout['rows'] ?? []) : [];
+        if (! $rows) {
+            return null; // unknown -> form falls back to A–Z
+        }
+        // Never drop rows that are already assigned, even if the screen changed.
+        $merged = array_values(array_unique(array_merge($rows, $selected)));
+        sort($merged);
+        return $merged;
     }
 
     protected function fkLabelMap(array $columns): array
@@ -88,13 +108,15 @@ class TicketClassController extends AdminController
 
     public function show($id)
     {
-        $item = ($this->modelClass)::findOrFail($id);
+        $item = ($this->modelClass)::with('showtime.screen')->findOrFail($id);
+        $this->seatRows = $this->rowsFor($item->showtime, (array) $item->seat_rows);
         return view('admin.crud.show', ['item' => $item, 'resource' => $this->resource, 'fields' => $this->fields()]);
     }
 
     public function edit($id)
     {
-        $item = ($this->modelClass)::findOrFail($id);
+        $item = ($this->modelClass)::with('showtime.screen')->findOrFail($id);
+        $this->seatRows = $this->rowsFor($item->showtime, (array) $item->seat_rows);
         return view('admin.crud.form', [
             'item' => $item,
             'resource' => $this->resource,

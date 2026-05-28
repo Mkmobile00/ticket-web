@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Seatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Showtime extends Model
 {
-    use HasFactory;
+    use HasFactory, Seatable;
 
     protected $fillable = ['movie_id', 'screen_id', 'language_id', 'format_id', 'show_date', 'show_time', 'available_seats', 'status'];
 
@@ -40,6 +41,23 @@ class Showtime extends Model
         return $this->hasMany(TicketClass::class);
     }
 
+    /** Seat map comes from the screen; price tiers from ticket classes. */
+    public function seatLayoutArray(): array
+    {
+        $l = $this->screen?->seat_layout ?: [];
+        if (is_string($l)) {
+            $l = json_decode($l, true) ?: [];
+        }
+        return ['rows' => $l['rows'] ?? [], 'seats_per_row' => $l['seats_per_row'] ?? []];
+    }
+
+    public function seatTiers()
+    {
+        return $this->ticketClasses->map(fn ($t) => [
+            'id' => $t->id, 'name' => $t->name, 'price' => (float) $t->price, 'rows' => (array) $t->seat_rows,
+        ]);
+    }
+
     public function bookings()
     {
         return $this->hasMany(Booking::class);
@@ -57,10 +75,5 @@ class Showtime extends Model
         $date = \Illuminate\Support\Carbon::parse($this->show_date)->format('D d M');
         $time = \Illuminate\Support\Carbon::parse($this->show_time)->format('g:i A');
         return "{$movie} — {$cinema}{$screen} · {$date} {$time}";
-    }
-
-    public function bookedSeats()
-    {
-        return $this->hasMany(BookingSeat::class);
     }
 }

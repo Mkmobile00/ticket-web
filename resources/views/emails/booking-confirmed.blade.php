@@ -1,8 +1,23 @@
 @php
     $st = $booking->showtime;
-    $movie = $st?->movie;
-    $cinema = $st?->screen?->cinema;
-    $seats = $booking->seats->map(fn ($s) => $s->seat_row . $s->seat_number)->implode(', ');
+    $isMovie = (bool) $st;
+    $subject = $booking->bookable;
+    if ($isMovie) {
+        $headline = $st?->movie?->title ?? 'Booking';
+        $venue = ($st?->screen?->cinema?->name ?? '') . ($st?->screen?->name ? ' — ' . $st->screen->name : '');
+        $when = \Carbon\Carbon::parse($st->show_date)->format('D, M d Y') . ' ' . \Carbon\Carbon::parse($st->show_time)->format('H:i');
+        $detail = 'Seats: ' . $booking->seats->map(fn ($s) => $s->seat_row . $s->seat_number)->implode(', ');
+    } elseif ($subject instanceof \App\Models\Sport) {
+        $headline = $subject->team_home && $subject->team_away ? $subject->team_home . ' vs ' . $subject->team_away : $subject->title;
+        $venue = $subject->venue ?? '';
+        $when = \Carbon\Carbon::parse($subject->sport_date)->format('D, M d Y');
+        $detail = 'Seats: ' . $booking->seats->map(fn ($s) => $s->seat_row . $s->seat_number)->implode(', ');
+    } else {
+        $headline = $subject->title ?? 'Event';
+        $venue = $subject->address ?? $subject->organizer ?? '';
+        $when = $subject?->event_date ? \Carbon\Carbon::parse($subject->event_date)->format('D, M d Y') : '';
+        $detail = 'Seats: ' . $booking->seats->map(fn ($s) => $s->seat_row . $s->seat_number)->implode(', ');
+    }
 @endphp
 <!DOCTYPE html>
 <html>
@@ -16,10 +31,10 @@
         <div style="padding:24px 28px;">
             <p>Hi {{ $booking->user->name ?? 'there' }}, your tickets are confirmed.</p>
             <table style="width:100%;border-collapse:collapse;font-size:14px;">
-                <tr><td style="padding:6px 0;color:#666;">Movie</td><td style="padding:6px 0;text-align:right;font-weight:600;">{{ $movie->title ?? '—' }}</td></tr>
-                <tr><td style="padding:6px 0;color:#666;">Cinema</td><td style="padding:6px 0;text-align:right;">{{ $cinema->name ?? '—' }} {{ $st?->screen?->name ? '— ' . $st->screen->name : '' }}</td></tr>
-                <tr><td style="padding:6px 0;color:#666;">Date &amp; Time</td><td style="padding:6px 0;text-align:right;">{{ $st ? \Carbon\Carbon::parse($st->show_date)->format('D, M d Y') . ' ' . \Carbon\Carbon::parse($st->show_time)->format('H:i') : '—' }}</td></tr>
-                <tr><td style="padding:6px 0;color:#666;">Seats</td><td style="padding:6px 0;text-align:right;font-weight:600;">{{ $seats }}</td></tr>
+                <tr><td style="padding:6px 0;color:#666;">{{ $isMovie ? 'Movie' : 'Event' }}</td><td style="padding:6px 0;text-align:right;font-weight:600;">{{ $headline }}</td></tr>
+                <tr><td style="padding:6px 0;color:#666;">{{ $isMovie ? 'Cinema' : 'Venue' }}</td><td style="padding:6px 0;text-align:right;">{{ $venue ?: '—' }}</td></tr>
+                <tr><td style="padding:6px 0;color:#666;">Date &amp; Time</td><td style="padding:6px 0;text-align:right;">{{ $when ?: '—' }}</td></tr>
+                <tr><td style="padding:6px 0;color:#666;">Tickets</td><td style="padding:6px 0;text-align:right;font-weight:600;">{{ $detail }}</td></tr>
                 <tr><td style="padding:6px 0;color:#666;">Total Paid</td><td style="padding:6px 0;text-align:right;font-weight:700;">${{ number_format($booking->total_amount, 2) }}</td></tr>
             </table>
             <div style="margin:22px 0;text-align:center;">
