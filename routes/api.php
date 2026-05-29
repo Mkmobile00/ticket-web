@@ -1,0 +1,66 @@
+<?php
+
+use App\Http\Controllers\Api\AuthApiController;
+use App\Http\Controllers\Api\BookingApiController;
+use App\Http\Controllers\Api\CatalogApiController;
+use App\Http\Controllers\Api\ContentApiController;
+use App\Http\Controllers\Api\ProfileApiController;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Mobile / Flutter REST API  (prefix: /api/v1)
+|--------------------------------------------------------------------------
+| Token auth via Laravel Sanctum. After register/login, send the token as:
+|     Authorization: Bearer {token}
+*/
+
+Route::prefix('v1')->group(function () {
+
+    // ---- Auth ----
+    Route::post('/register', [AuthApiController::class, 'register']);
+    Route::post('/login', [AuthApiController::class, 'login'])->middleware('throttle:login');
+
+    // ---- Public catalog ----
+    Route::get('/cities', [CatalogApiController::class, 'cities']);
+    Route::get('/movies', [CatalogApiController::class, 'movies']);
+    Route::get('/movies/{movie:slug}', [CatalogApiController::class, 'movie']);
+    Route::get('/movies/{movie:slug}/showtimes', [CatalogApiController::class, 'movieShowtimes']);
+    Route::get('/events', [CatalogApiController::class, 'events']);
+    Route::get('/events/{event:slug}', [CatalogApiController::class, 'event']);
+    Route::get('/sports', [CatalogApiController::class, 'sports']);
+    Route::get('/sports/{sport:slug}', [CatalogApiController::class, 'sport']);
+
+    // Seat map (status) — works logged-out (shows available/booked/locked);
+    // "mine" status only when authenticated.
+    Route::get('/seats/{type}/{id}', [CatalogApiController::class, 'seats']);
+
+    // ---- Public content ----
+    Route::get('/home', [ContentApiController::class, 'home']);
+    Route::get('/search', [ContentApiController::class, 'search']);
+    Route::get('/popcorn', [ContentApiController::class, 'popcorn']);
+    Route::get('/faqs', [ContentApiController::class, 'faqs']);
+    Route::get('/partners', [ContentApiController::class, 'partners']);
+    Route::get('/blog', [ContentApiController::class, 'blog']);
+    Route::get('/blog/{post:slug}', [ContentApiController::class, 'blogShow']);
+    Route::post('/promo/validate', [ContentApiController::class, 'validatePromo']);
+    Route::post('/contact', [ContentApiController::class, 'contact']);
+    Route::post('/newsletter', [ContentApiController::class, 'newsletter']);
+
+    // ---- Authenticated (Bearer token) ----
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/me', [AuthApiController::class, 'me']);
+        Route::post('/logout', [AuthApiController::class, 'logout']);
+
+        // Profile
+        Route::get('/profile', [ProfileApiController::class, 'show']);
+        Route::put('/profile', [ProfileApiController::class, 'update']);
+        Route::put('/profile/password', [ProfileApiController::class, 'password']);
+
+        Route::get('/bookings', [BookingApiController::class, 'index']);
+        Route::post('/bookings', [BookingApiController::class, 'store'])->middleware('throttle:seat-lock');
+        Route::get('/bookings/{booking}', [BookingApiController::class, 'show']);
+        Route::post('/bookings/{booking}/pay', [BookingApiController::class, 'pay'])->middleware('throttle:payments');
+        Route::post('/bookings/{booking}/cancel', [BookingApiController::class, 'cancel']);
+    });
+});

@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\LoginAlertMail;
+use App\Mail\WelcomeMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
@@ -24,10 +28,24 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
+            $this->safeMail(Auth::user()->email, new LoginAlertMail(Auth::user(), now()->format('D, M d Y H:i'), $request->ip()));
             return redirect()->intended(Auth::user()->is_admin ? '/admin' : route('account.dashboard'));
         }
 
         return back()->withErrors(['email' => 'Invalid credentials.'])->onlyInput('email');
+    }
+
+    /** Send mail without letting a delivery failure break the request. */
+    private function safeMail(?string $to, $mailable): void
+    {
+        if (! $to) {
+            return;
+        }
+        try {
+            Mail::to($to)->send($mailable);
+        } catch (\Throwable $e) {
+            Log::warning('Mail send failed', ['to' => $to, 'error' => $e->getMessage()]);
+        }
     }
 
     public function showAdminLogin()
@@ -75,6 +93,8 @@ class AuthController extends Controller
 
         $user = User::create($data);
         Auth::login($user);
+
+        $this->safeMail($user->email, new WelcomeMail($user));
 
         return redirect()->route('account.dashboard')->with('status', 'Welcome aboard, ' . $user->name . '!');
     }
