@@ -176,10 +176,35 @@ Body: `method` = `card` | `esewa` | `khalti`
 
 ---
 
-## 7. Rate limits
-- `/login`: 5 / 10 min per IP
+## 7. Extra auth (password reset / Google / email verify)
+
+- **POST `/password/forgot`** body `email` → 200 (always; emails a 6-digit code, valid 30 min)
+- **POST `/password/reset`** body `email, code, password, password_confirmation` → 200 / 422 (bad code)
+- **POST `/auth/google`** body `id_token` (from the `google_sign_in` plugin) → `{ user, token }` (401 if invalid)
+- **POST `/email/verify/send`** *(auth)* → emails a 6-digit code
+- **POST `/email/verify`** *(auth)* body `code` → marks the email verified
+
+## 8. Filter options (public)
+- **GET `/genres`** · **GET `/languages`** · **GET `/formats`** → `{ data:[{id,name,...}] }` (for filter dropdowns)
+
+## 9. Booking modifiers *(auth, pending bookings only)*
+- **POST `/bookings/{id}/addons`** body `items:[{popcorn_item_id, quantity}]` → replaces add-ons, re-totals
+- **POST `/bookings/{id}/apply-promo`** body `code` → attaches promo, re-totals (`total = seats + add-ons − discount`)
+- **POST `/bookings/{id}/verify-payment`** body `pidx?` → finalize an eSewa/Khalti booking after the WebView returns (402 if not yet paid)
+- **DELETE `/bookings/{id}/release`** → instantly drop a pending hold & free its seats
+
+> Order on the booking screen: reserve → (optional) addons + apply-promo → pay. For eSewa/Khalti, after the WebView returns call `verify-payment`, then poll `GET /bookings/{id}`.
+
+## 10. Push notifications *(auth)*
+- **POST `/device-token`** body `token, platform?(android|ios)` → register FCM/APNs token
+- **DELETE `/device-token`** body `token` → unregister
+
+---
+
+## 11. Rate limits
+- `/login`, `/password/*`: 5 / 10 min per IP
 - `/bookings` (reserve): 10 / min per user
-- `/bookings/{id}/pay`: 5 / min per user
+- `/bookings/{id}/pay`, `/verify-payment`: 5 / min per user
 Exceeding → `429` with `Retry-After`.
 
 ---

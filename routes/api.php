@@ -20,9 +20,15 @@ Route::prefix('v1')->group(function () {
     // ---- Auth ----
     Route::post('/register', [AuthApiController::class, 'register']);
     Route::post('/login', [AuthApiController::class, 'login'])->middleware('throttle:login');
+    Route::post('/auth/google', [AuthApiController::class, 'google']);
+    Route::post('/password/forgot', [AuthApiController::class, 'forgotPassword'])->middleware('throttle:login');
+    Route::post('/password/reset', [AuthApiController::class, 'resetPassword'])->middleware('throttle:login');
 
     // ---- Public catalog ----
     Route::get('/cities', [CatalogApiController::class, 'cities']);
+    Route::get('/genres', [CatalogApiController::class, 'genres']);
+    Route::get('/languages', [CatalogApiController::class, 'languages']);
+    Route::get('/formats', [CatalogApiController::class, 'formats']);
     Route::get('/movies', [CatalogApiController::class, 'movies']);
     Route::get('/movies/{movie:slug}', [CatalogApiController::class, 'movie']);
     Route::get('/movies/{movie:slug}/showtimes', [CatalogApiController::class, 'movieShowtimes']);
@@ -57,10 +63,23 @@ Route::prefix('v1')->group(function () {
         Route::put('/profile', [ProfileApiController::class, 'update']);
         Route::put('/profile/password', [ProfileApiController::class, 'password']);
 
+        // Email verification
+        Route::post('/email/verify/send', [AuthApiController::class, 'sendEmailVerification']);
+        Route::post('/email/verify', [AuthApiController::class, 'verifyEmail']);
+
+        // Push notification device tokens
+        Route::post('/device-token', [ProfileApiController::class, 'registerDevice']);
+        Route::delete('/device-token', [ProfileApiController::class, 'removeDevice']);
+
+        // Bookings
         Route::get('/bookings', [BookingApiController::class, 'index']);
         Route::post('/bookings', [BookingApiController::class, 'store'])->middleware('throttle:seat-lock');
         Route::get('/bookings/{booking}', [BookingApiController::class, 'show']);
+        Route::post('/bookings/{booking}/addons', [BookingApiController::class, 'addons']);
+        Route::post('/bookings/{booking}/apply-promo', [BookingApiController::class, 'applyPromo']);
         Route::post('/bookings/{booking}/pay', [BookingApiController::class, 'pay'])->middleware('throttle:payments');
+        Route::post('/bookings/{booking}/verify-payment', [BookingApiController::class, 'verifyPayment'])->middleware('throttle:payments');
         Route::post('/bookings/{booking}/cancel', [BookingApiController::class, 'cancel']);
+        Route::delete('/bookings/{booking}/release', [BookingApiController::class, 'release']);
     });
 });

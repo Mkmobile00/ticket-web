@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\DeviceToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -46,5 +47,27 @@ class ProfileApiController extends Controller
         }
         $request->user()->update(['password' => Hash::make($request->password)]);
         return response()->json(['message' => 'Password changed.']);
+    }
+
+    /** POST /api/v1/device-token  { token, platform? } — register for push. */
+    public function registerDevice(Request $request)
+    {
+        $data = $request->validate([
+            'token' => 'required|string|max:512',
+            'platform' => 'nullable|in:android,ios',
+        ]);
+        DeviceToken::updateOrCreate(
+            ['user_id' => $request->user()->id, 'token' => $data['token']],
+            ['platform' => $data['platform'] ?? null]
+        );
+        return response()->json(['message' => 'Device registered for notifications.']);
+    }
+
+    /** DELETE /api/v1/device-token  { token } — unregister. */
+    public function removeDevice(Request $request)
+    {
+        $request->validate(['token' => 'required|string']);
+        DeviceToken::where('user_id', $request->user()->id)->where('token', $request->token)->delete();
+        return response()->json(['message' => 'Device unregistered.']);
     }
 }

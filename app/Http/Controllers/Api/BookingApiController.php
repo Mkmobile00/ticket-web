@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Event;
 use App\Models\Payment;
+use App\Models\PopcornItem;
+use App\Models\PromoCode;
 use App\Models\Showtime;
 use App\Models\Sport;
 use App\Services\PaymentService;
@@ -126,6 +128,137 @@ class BookingApiController extends Controller
         }
 
         BookingConfirmed::dispatch($booking->fresh(['seats', 'showtime.movie', 'showtime.screen.cinema', 'user', 'bookable']));
+    }
+
+    /**
+     * POST /api/v1/bookings/{booking}/addons  { items: [{popcorn_item_id, quantity}] }
+     * Replaces the booking's add-ons and re-totals. Pending bookings only.
+     */
+    public function addons(Request $request, Booking $booking)
+    {
+        $this->authorize($request, $booking);
+        $this->assertPending($booking);
+        $data = $request->validate([
+            'items' => 'present|array',
+            'items.*.popcorn_item_id' => 'required|integer|exists:popcorn_items,id',
+            'items.*.quantity' => 'required|integer|min:1|max:50',
+        ]);
+
+        DB::transaction(function () use ($booking, $data) {
+            $booking->addons()->delete();
+            foreach ($data['items'] as $row) {
+                $item = PopcornItem::find($row['popcorn_item_id']);
+                $booking->addons()->create([
+                    'popcorn_item_id' => $item->id,
+                    'quantity' => $row['quantity'],
+                    'price' => $item->price,
+                ]);
+            }
+            $this->recomputeTotal($booking);
+        });
+
+        return response()->json(['message' => 'Add-ons updated.', 'booking' => $this->bookingPayload($booking->fresh('seats', 'addons.popcornItem'))]);
+    }
+
+    /**
+     * POST /api/v1/bookings/{booking}/apply-promo  { code }
+     * Validates and attaches a promo, recomputing the total. Pending only.
+     */
+    public function applyPromo(Request $request, Booking $booking)
+    {
+        $this->authorize($request, $booking);
+        $this->assertPending($booking);
+        $request->validate(['code' => 'required|string']);
+
+        $promo = PromoCode::where('code', $request->code)->where('is_active', true)->first();
+        $now = now();
+        $invalid = ! $promo
+            || ($promo->valid_from && $promo->valid_from->gt($now))
+            || ($promo->valid_to && $promo->valid_to->lt($now))
+            || ($promo->usage_limit && $promo->usage_count >= $promo->usage_limit);
+
+        if ($invalid) {
+            return response()->json(['message' => 'Invalid or expired promo code.', 'errors' => ['code' => ['Invalid or expired.']]], 422);
+        }
+
+        $subtotal = $this->subtotal($booking);
+        $discount = $promo->discount_type === 'percentage'
+            ? round($subtotal * ((float) $promo->discount_value) / 100, 2)
+            : min($subtotal, (float) $promo->discount_value);
+
+        $booking->update(['promo_code_id' => $promo->id, 'discount_amount' => $discount]);
+        $this->recomputeTotal($booking);
+
+        return response()->json([
+            'message' => 'Promo applied.',
+            'discount' => $discount,
+            'booking' => $this->bookingPayload($booking->fresh('seats', 'addons.popcornItem')),
+        ]);
+    }
+
+    /**
+     * POST /api/v1/bookings/{booking}/verify-payment  { pidx? }
+     * Finalizes an eSewa/Khalti booking after the WebView returns. Card/mock
+     * are already confirmed by /pay; this is the mobile gateway-return hook.
+     */
+    public function verifyPayment(Request $request, Booking $booking)
+    {
+        $this->authorize($request, $booking);
+        if ($booking->status === 'confirmed') {
+            return response()->json(['message' => 'Already confirmed.', 'booking' => $this->bookingPayload($booking->load('seats'))]);
+        }
+
+        $ref = $request->input('pidx');
+        $payment = Payment::where('booking_id', $booking->id)
+            ->when($ref, fn ($q) => $q->where('gateway_ref', $ref))
+            ->latest('id')->first();
+
+        if (! $payment || ! $this->payments->verify($payment)) {
+            return response()->json(['message' => 'Payment not completed yet.'], 402);
+        }
+
+        $this->finalize($booking, $payment, $request);
+        return response()->json(['message' => 'Payment verified. Booking confirmed.', 'booking' => $this->bookingPayload($booking->fresh('seats'))]);
+    }
+
+    /**
+     * DELETE /api/v1/bookings/{booking}/release
+     * Instantly drop a pending hold and free its seats (user backed out).
+     */
+    public function release(Request $request, Booking $booking)
+    {
+        $this->authorize($request, $booking);
+        if ($booking->status !== 'pending') {
+            return response()->json(['message' => 'Only pending bookings can be released.'], 422);
+        }
+        $booking->load('seats');
+        DB::transaction(function () use ($booking) {
+            $count = $booking->seats->count();
+            if ($count > 0 && $booking->showtime_id) {
+                Showtime::where('id', $booking->showtime_id)->increment('available_seats', $count);
+            }
+            $booking->seats()->delete();
+            $booking->update(['status' => 'cancelled']);
+        });
+        return response()->json(['message' => 'Hold released.']);
+    }
+
+    private function assertPending(Booking $b): void
+    {
+        abort_unless($b->status === 'pending', 422, 'Only pending bookings can be modified.');
+    }
+
+    private function subtotal(Booking $b): float
+    {
+        return (float) $b->seats()->sum('price');
+    }
+
+    /** total = seats + add-ons - discount. */
+    private function recomputeTotal(Booking $b): void
+    {
+        $addons = (float) $b->addons()->selectRaw('COALESCE(SUM(price * quantity),0) t')->value('t');
+        $total = max(0, $this->subtotal($b) + $addons - (float) $b->discount_amount);
+        $b->update(['total_amount' => round($total, 2)]);
     }
 
     /** GET /api/v1/bookings — my bookings */

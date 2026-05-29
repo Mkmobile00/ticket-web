@@ -30,6 +30,22 @@ class CatalogApiController extends Controller
         return response()->json(['data' => City::orderBy('name')->get(['id', 'name', 'slug'])]);
     }
 
+    /** GET /api/v1/genres · /languages · /formats — filter dropdown options. */
+    public function genres()
+    {
+        return response()->json(['data' => \App\Models\Genre::orderBy('name')->get(['id', 'name', 'slug'])]);
+    }
+
+    public function languages()
+    {
+        return response()->json(['data' => \App\Models\Language::orderBy('name')->get(['id', 'name', 'code'])]);
+    }
+
+    public function formats()
+    {
+        return response()->json(['data' => \App\Models\Format::orderBy('name')->get(['id', 'name'])]);
+    }
+
     /** GET /api/v1/movies?search=&city=&genre=&language=&page= */
     public function movies(Request $request)
     {
@@ -127,13 +143,17 @@ class CatalogApiController extends Controller
 
     public function event(Event $event)
     {
-        $event->load('tickets');
+        $event->load('tickets', 'speakers');
         return response()->json(['data' => [
             'id' => $event->id, 'title' => $event->title, 'slug' => $event->slug,
             'description' => $event->description, 'banner_image' => $this->img($event->banner_image),
             'date' => optional($event->event_date)->toDateString(),
             'start_time' => $event->start_time, 'venue' => $event->address, 'organizer' => $event->organizer,
             'tiers' => $event->seatTiers(),
+            'speakers' => $event->speakers->map(fn ($s) => [
+                'name' => $s->name, 'designation' => $s->designation,
+                'photo' => $this->img($s->photo), 'about' => $s->about,
+            ]),
         ]]);
     }
 

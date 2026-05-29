@@ -71,6 +71,34 @@ if [ -n "$BID" ]; then printf "  PASS  %-6s %-34s -> reserved booking %s (%s,%s)
 check "pay" POST "/bookings/$BID/pay" 200 -d "method=card" "AUTH:$TOKEN"
 check "bookings-list" GET /bookings 200 "AUTH:$TOKEN"
 check "booking-show" GET "/bookings/$BID" 200 "AUTH:$TOKEN"
+
+echo "== BOOKING MODS (pending: addons / promo / verify / release) =="
+SEAT3="L-$((RANDOM%20+1))"
+RESP2=$(curl -s -H "Accept: application/json" -H "Authorization: Bearer $TOKEN" -d "type=showtime" -d "id=1" --data-urlencode "seats[]=$SEAT3" "$B/bookings")
+B2=$(echo "$RESP2" | jqget "['booking']['id']")
+if [ -n "$B2" ]; then printf "  PASS  POST   /bookings (mods)                  -> %s (%s)\n" "$B2" "$SEAT3"; PASS=$((PASS+1)); else printf "  FAIL  POST /bookings (mods) -> %s\n" "$(echo "$RESP2"|head -c 140)"; FAIL=$((FAIL+1)); fi
+check "addons" POST "/bookings/$B2/addons" 200 --data-urlencode "items[0][popcorn_item_id]=1" --data-urlencode "items[0][quantity]=2" "AUTH:$TOKEN"
+check "apply-promo" POST "/bookings/$B2/apply-promo" 200 -d "code=SAVE10" "AUTH:$TOKEN"
+check "verify-pending" POST "/bookings/$B2/verify-payment" 402 "AUTH:$TOKEN"
+check "release" DELETE "/bookings/$B2/release" 200 "AUTH:$TOKEN"
+
+echo "== FILTER LISTS + SPEAKERS =="
+check "genres" GET /genres 200
+check "languages" GET /languages 200
+check "formats" GET /formats 200
+check "event-detail" GET /events/digital-marketing-conference-2020 200
+
+echo "== PASSWORD RESET / GOOGLE / EMAIL VERIFY =="
+check "forgot" POST /password/forgot 200 -d "email=user@buleto.test"
+check "reset-bad" POST /password/reset 422 -d "email=user@buleto.test" -d "code=000000" -d "password=newsecret1" -d "password_confirmation=newsecret1"
+check "google-bad" POST /auth/google 401 -d "id_token=invalidtoken"
+check "verify-send" POST /email/verify/send 200 "AUTH:$TOKEN"
+check "verify-bad" POST /email/verify 422 -d "code=000000" "AUTH:$TOKEN"
+
+echo "== DEVICE TOKEN (push) =="
+check "device-add" POST /device-token 200 -d "token=fcm-$RND" -d "platform=android" "AUTH:$TOKEN"
+check "device-del" DELETE /device-token 200 -d "token=fcm-$RND" "AUTH:$TOKEN"
+
 check "logout" POST /logout 200 "AUTH:$TOKEN"
 
 echo ""
