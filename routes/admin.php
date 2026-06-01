@@ -35,6 +35,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('movies', AdminMovieController::class);
+    // Drill-down: which cinemas / screens / showtimes / ticket classes a movie plays in.
+    Route::get('movies/{movie}/playing', [AdminMovieController::class, 'playing'])->name('movies.playing');
     Route::resource('cinemas', CinemaController::class);
     Route::resource('screens', ScreenController::class);
     Route::resource('showtimes', ShowtimeController::class);
