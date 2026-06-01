@@ -76,10 +76,6 @@ class SeatController extends Controller
         $seatable = $this->resolve($type, $id);
         abort_unless($seatable, 404);
 
-        $layout = $seatable->seatLayoutArray();
-        $rows = $layout['rows'] ?: ['A', 'B', 'C', 'D', 'E'];
-        $perRow = $layout['seats_per_row'] ?: array_fill(0, count($rows), 20);
-
         $owner = $this->owner($request);
         $booked = $this->bookedMap($seatable);
         $lockMap = $this->locks->lockedSeatMap($seatable->seatContext());
@@ -87,12 +83,16 @@ class SeatController extends Controller
 
         $counts = ['available' => 0, 'locked' => 0, 'booked' => 0];
         $grid = [];
-        foreach ($rows as $i => $row) {
-            $row = strtoupper($row);
-            $tier = $tierByRow[$row] ?? null;
+        foreach ($seatable->seatGrid() as $row) {
+            $label = $row['label'];
+            $tier = $tierByRow[$label] ?? null;
             $seats = [];
-            for ($n = 1; $n <= ($perRow[$i] ?? 0); $n++) {
-                $sid = $row . '-' . $n;
+            foreach ($row['cells'] as $cell) {
+                if (($cell['type'] ?? 'seat') !== 'seat') {
+                    $seats[] = ['type' => $cell['type']]; // aisle | blocked
+                    continue;
+                }
+                $sid = $cell['id'];
                 if ($booked->has($sid)) {
                     $status = 'booked';
                     $counts['booked']++;
@@ -104,13 +104,14 @@ class SeatController extends Controller
                     $counts['available']++;
                 }
                 $seats[] = [
+                    'type' => 'seat',
                     'id' => $sid,
                     'status' => $status,
                     'tier' => $tier['name'] ?? null,
                     'price' => $tier['price'] ?? null,
                 ];
             }
-            $grid[] = ['row' => $row, 'tier' => $tier['name'] ?? null, 'seats' => $seats];
+            $grid[] = ['row' => $label, 'tier' => $tier['name'] ?? null, 'seats' => $seats];
         }
 
         return response()->json([

@@ -192,7 +192,8 @@ class AuthApiController extends Controller
     {
         if (! $to) return;
         try {
-            Mail::to($to)->send($mailable);
+            // Queue so the HTTP request returns immediately (a queue worker sends it).
+            Mail::to($to)->queue($mailable);
         } catch (\Throwable $e) {
             Log::warning('API mail failed', ['to' => $to, 'error' => $e->getMessage()]);
         }

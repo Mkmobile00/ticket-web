@@ -55,7 +55,7 @@
             </div>
             <ul class="menu">
                 <li class="city-selector">
-                    <a href="#0" class="city-trigger">
+                    <a href="#0" class="city-trigger" onclick="window.openCityModal&&window.openCityModal();return false;">
                         <i class="fas fa-map-marker-alt"></i>
                         <span>{{ ($selectedCity ?? null)?->name ?? 'Select City' }}</span>
                         <i class="fas fa-angle-down" style="font-size:.75em;margin-left:5px;"></i>

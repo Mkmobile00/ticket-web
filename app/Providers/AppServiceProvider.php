@@ -6,7 +6,9 @@ use App\Models\City;
 use App\Support\LfmImageManager;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -43,6 +45,21 @@ class AppServiceProvider extends ServiceProvider
             $view->with('allCities', City::orderBy('name')->get());
             $cityId = session('selected_city_id');
             $view->with('selectedCity', $cityId ? City::find($cityId) : null);
+        });
+
+        // BCC the admin on every outgoing email (booking, login, register, etc.)
+        // so they receive a copy of all transactional mail. Set MAIL_ADMIN_BCC in .env.
+        Event::listen(function (MessageSending $event) {
+            $admin = config('mail.admin_bcc');
+            if (! $admin) return;
+            $message = $event->message;
+            $already = array_map(
+                fn ($a) => strtolower($a->getAddress()),
+                array_merge($message->getTo(), $message->getCc(), $message->getBcc())
+            );
+            if (! in_array(strtolower($admin), $already, true)) {
+                $message->addBcc($admin);
+            }
         });
     }
 }

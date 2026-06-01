@@ -253,11 +253,12 @@ class BookingApiController extends Controller
         return (float) $b->seats()->sum('price');
     }
 
-    /** total = seats + add-ons - discount. */
+    /** total = (seats + add-ons - discount) + VAT. */
     private function recomputeTotal(Booking $b): void
     {
         $addons = (float) $b->addons()->selectRaw('COALESCE(SUM(price * quantity),0) t')->value('t');
-        $total = max(0, $this->subtotal($b) + $addons - (float) $b->discount_amount);
+        $net = max(0, $this->subtotal($b) + $addons - (float) $b->discount_amount);
+        $total = $net * (1 + (float) config('app.vat_rate'));
         $b->update(['total_amount' => round($total, 2)]);
     }
 

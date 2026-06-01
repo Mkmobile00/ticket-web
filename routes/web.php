@@ -39,6 +39,7 @@ Route::post('/showtimes/{showtime}/seats', [BookingController::class, 'storeSeat
 Route::get('/checkout/movie/{booking}', [CheckoutController::class, 'movie'])->name('checkout.movie')->middleware('auth');
 Route::get('/checkout/event/{booking}', [CheckoutController::class, 'event'])->name('checkout.event')->middleware('auth');
 Route::get('/checkout/sport/{booking}', [CheckoutController::class, 'sport'])->name('checkout.sport')->middleware('auth');
+Route::post('/checkout/{booking}/addons', [CheckoutController::class, 'addons'])->name('checkout.addons')->middleware('auth');
 Route::post('/checkout/{booking}/confirm', [CheckoutController::class, 'confirm'])->name('checkout.confirm')->middleware(['auth', 'throttle:payments']);
 Route::get('/payment/callback/{booking}', [CheckoutController::class, 'paymentCallback'])->name('payment.callback')->middleware('auth');
 Route::get('/bookings/{booking}/ticket', [CheckoutController::class, 'ticket'])->name('bookings.ticket')->middleware('auth');

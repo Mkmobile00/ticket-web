@@ -1,0 +1,111 @@
+/* ============================================================
+   Boleto — mobile / tablet polish
+   Loaded after main.css. Targets detail, seat-plan and checkout
+   pages so they read well on phones & tablets (≤991px).
+   ============================================================ */
+
+@media (max-width: 991.98px) {
+
+    /* --- Detail / seat-plan / checkout banner ---------------------
+       The theme reserves 235px of top padding for an absolutely
+       positioned poster that is hidden below 992px, which leaves a
+       big empty gap on phones. Tighten it and show the poster inline. */
+    .details-banner {
+        padding-top: 112px;
+        padding-bottom: 26px;
+    }
+
+    .details-banner-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    /* Bring the movie poster back, centered above the content */
+    .details-banner-wrapper .details-banner-thumb {
+        position: static;
+        display: block;
+        width: 150px;
+        max-width: 46%;
+        margin: 0 auto 18px;
+    }
+    .details-banner-wrapper .details-banner-thumb .video-popup {
+        width: 54px;
+        height: 54px;
+    }
+
+    .details-banner-content,
+    .details-banner-content.offset-lg-3 {
+        margin-left: 0 !important;
+        width: 100%;
+    }
+    .details-banner-content .title { font-size: 30px; line-height: 1.2; }
+    .details-banner-content .tags { margin-bottom: 14px; }
+    .details-banner-content .button { margin: 0 4px 8px; }
+    .details-banner-content .social-and-duration { justify-content: center; gap: 14px; }
+    .details-banner-content .duration-area { justify-content: center; flex-wrap: wrap; }
+    .details-banner-content .social-share { justify-content: center; }
+
+    /* --- Book section (rating tiles) --- */
+    .book-section .book-wrapper {
+        flex-direction: column;
+        gap: 22px;
+    }
+    .book-section .book-wrapper.offset-lg-3 { margin-left: 0 !important; }
+    .book-wrapper .left-side {
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+        gap: 18px 0;
+    }
+    .book-wrapper .left-side .item {
+        flex: 1 1 calc(50% - 30px);   /* 15px side margins on each item */
+        max-width: calc(50% - 30px);
+        text-align: center;
+    }
+    .book-wrapper .left-side .item .item-header { justify-content: center; }
+    .book-wrapper .custom-button { width: 100%; max-width: 320px; }
+
+    /* --- Page title bar (back / date / tickets) ---
+       The theme uses a negative side-margin gutter (margin:0 -15px) and the
+       count item collapses when wrapped. Lay it out explicitly instead:
+       row 1 = [back] ............ [count], row 2 = date (full width). */
+    .page-title .page-title-area {
+        flex-wrap: wrap;
+        margin: 0;
+        row-gap: 12px;
+        column-gap: 14px;
+        align-items: center;
+    }
+    .page-title .page-title-area .item { margin: 0; }
+    .page-title .page-title-area .item.md-order-1 { order: 1; }                 /* back: left */
+    .page-title .page-title-area .item:not(.md-order-1):not(.date-item) {
+        order: 2;
+        margin-left: auto;                                                     /* count: pushed right */
+        text-align: right;
+    }
+    .page-title .page-title-area .item:not(.md-order-1):not(.date-item) .title { color: #fff; }
+    .page-title .page-title-area .item:not(.md-order-1):not(.date-item) p { color: #9aace5; margin: 0; }
+    .page-title .page-title-area .item.date-item { order: 3; flex: 1 1 100%; }  /* date: own row */
+    .page-title .page-title-area .back-button { white-space: nowrap; }
+
+    /* --- Detail body section --- */
+    .movie-details-section { padding-top: 42px; padding-bottom: 42px; }
+
+    /* --- Checkout --- */
+    .booking-summery { margin-top: 30px; }
+    .checkout-widget { padding: 22px 18px; }
+}
+
+@media (max-width: 575.98px) {
+    .details-banner { padding-top: 92px; padding-bottom: 22px; }
+    .details-banner-content .title { font-size: 24px; }
+    .details-banner-wrapper .details-banner-thumb { width: 130px; }
+
+    .book-wrapper .left-side .item .item-header .counter-area .counter-item,
+    .book-wrapper .left-side .item .item-header > .title { font-size: 22px; }
+
+    /* Stack rating tiles a touch tighter */
+    .book-wrapper .left-side { gap: 14px 0; }
+}

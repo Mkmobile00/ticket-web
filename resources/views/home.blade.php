@@ -1,19 +1,152 @@
 @extends('layouts.frontend')
 
+@push('styles')
+<style>
+    /* =====================================================================
+       Mobile & Tablet polish (≤991px). Desktop untouched.
+       Poster-first cards, tidy spacing, clean type — BigMovies-style.
+       ===================================================================== */
+    @media (max-width: 991.98px) {
+        /* --- Card shell (movies / events / sports share these classes) --- */
+        .movie-grid, .event-grid, .sports-grid {
+            background: #0f1733;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 8px 22px rgba(0, 0, 0, .30);
+            margin-bottom: 18px;
+            transition: transform .18s ease, box-shadow .18s ease;
+        }
+        .movie-grid:active, .event-grid:active, .sports-grid:active { transform: scale(.985); }
+
+        /* Poster: consistent 2:3, fills the card, no inner radius */
+        .movie-grid .movie-thumb, .event-grid .movie-thumb, .sports-grid .movie-thumb { margin: 0; position: relative; }
+        .movie-grid .movie-thumb img, .event-grid .movie-thumb img, .sports-grid .movie-thumb img {
+            width: 100%; aspect-ratio: 2 / 3; object-fit: cover; display: block;
+        }
+
+        /* Date badge (events/sports) — compact pill, top-left */
+        .event-grid .event-date, .sports-grid .event-date {
+            position: absolute; top: 8px; left: 8px; padding: 4px 8px;
+            background: rgba(13, 17, 34, .82); border-radius: 8px; line-height: 1.1;
+        }
+        .event-grid .event-date .date-title, .sports-grid .event-date .date-title { font-size: 11px; }
+
+        /* Content area */
+        .movie-content {
+            padding: 10px 12px 12px;
+            background: linear-gradient(180deg, #131b3a 0%, #0f1733 100%) !important;
+        }
+        .movie-content .title { margin: 0 0 6px; font-size: 14px; line-height: 1.3; }
+        .movie-content .title a {
+            display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;
+            overflow: hidden; color: #fff;
+        }
+        .movie-rating-percent { display: flex; gap: 12px; padding: 0; margin: 0; }
+        .movie-rating-percent li { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #cfd4db; }
+        .movie-rating-percent .thumb img { width: 15px; height: 15px; }
+
+        /* --- Section headers --- */
+        .section-header-1 { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .section-header-1 .title { font-size: 20px; margin: 0; }
+        .section-header-1 .view-all { font-size: 13px; }
+
+        /* --- Section spacing --- */
+        .movie-section.padding-top { padding-top: 36px; }
+        .movie-section.padding-bottom { padding-bottom: 36px; }
+        .article-section.padding-bottom { padding-bottom: 26px; }
+
+        /* --- Tighter gutters for the 2-up grid --- */
+        .movie-section .row.mb-30-none { margin-left: -7px; margin-right: -7px; }
+        .movie-section .row.mb-30-none > [class*="col-"] { padding-left: 7px; padding-right: 7px; }
+
+        /* --- "What are you looking for" — Movie / Event / Sports on ONE line --- */
+        .ticket-tab-menu {
+            display: flex !important;
+            flex-wrap: nowrap;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .ticket-tab-menu li {
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex !important;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            margin: 0 !important;
+            padding: 10px 4px !important;
+            text-align: center;
+            border-radius: 30px;
+        }
+        .ticket-tab-menu li .tab-thumb { margin: 0 !important; }
+        .ticket-tab-menu li .tab-thumb img { width: 26px; height: 26px; }
+        .ticket-tab-menu li span { font-size: 12px; line-height: 1; white-space: nowrap; }
+
+        /* --- City / Date / Cinema filters on ONE line (search box full width above) --- */
+        .ticket-search-form { display: flex !important; flex-wrap: wrap; gap: 10px; }
+        .ticket-search-form .form-group.large { flex: 1 1 100%; margin: 0 !important; }
+        .ticket-search-form .form-group:not(.large) {
+            flex: 1 1 0; min-width: 0; margin: 0 !important;
+            display: flex !important; flex-direction: column; align-items: flex-start;
+            gap: 3px; padding: 9px 10px; height: auto;
+        }
+        .ticket-search-form .form-group:not(.large) .thumb { position: static; margin: 0; }
+        .ticket-search-form .form-group:not(.large) .thumb img { width: 16px; height: 16px; }
+        .ticket-search-form .form-group:not(.large) .type { font-size: 11px; margin: 0; }
+        .ticket-search-form .form-group:not(.large) .nice-select,
+        .ticket-search-form .form-group:not(.large) .select-bar {
+            width: 100% !important; min-width: 0 !important; font-size: 12px;
+            padding-left: 0; padding-right: 16px; height: auto; line-height: 1.4;
+            background-color: transparent;
+        }
+        .ticket-search-form .form-group:not(.large) .nice-select .current { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+    }
+
+    /* --- Phone-only (≤575px): compact hero + search --- */
+    @media (max-width: 575.98px) {
+        .banner-section { padding: 72px 0 0 !important; min-height: auto !important; }
+        .banner-section .banner-content .title { font-size: 29px !important; line-height: 1.18; }
+        .banner-section .banner-content p { font-size: 13px; margin: 8px 0 0; }
+
+        /* A small, comfortable gap between the hero slider and the search panel */
+        .search-ticket-section { padding-top: 22px !important; }
+
+        .search-tab { padding: 22px 16px !important; }
+        .search-ticket-header .title { font-size: 19px; }
+        .search-ticket-header .category { font-size: 12px; }
+
+        .section-header-1 .title { font-size: 18px; }
+        .movie-content .title { font-size: 13px; }
+    }
+
+    /* --- Tablet (576–991px): roomier hero, 3-up cards via col-md-4 --- */
+    @media (min-width: 576px) and (max-width: 991.98px) {
+        .banner-section .banner-content .title { font-size: 44px !important; }
+        .section-header-1 .title { font-size: 22px; }
+    }
+</style>
+@endpush
+
 @section('content')
 <!-- ==========Banner-Section========== -->
     <section class="banner-section">
-        <div class="banner-bg bg_img bg-fixed" data-background="{{ asset('assets/images/banner/banner01.jpg') }}"></div>
+        <div class="banner-bg bg_img bg-fixed" data-background="{{ \App\Models\Setting::image('hero_bg', 'assets/images/banner/banner01.jpg') }}"></div>
         <div class="container">
+            @php
+                $heroWords = collect(explode(',', \App\Models\Setting::getValue('hero_words', 'Movie,Event,Sport')))
+                    ->map(fn ($w) => trim($w))->filter()->values();
+            @endphp
             <div class="banner-content">
-                <h1 class="title  cd-headline clip"><span class="d-block">book your</span> tickets for 
+                <h1 class="title  cd-headline clip"><span class="d-block">{{ \App\Models\Setting::getValue('hero_line_1', 'book your') }}</span> {{ \App\Models\Setting::getValue('hero_line_2', 'tickets for') }}
                     <span class="color-theme cd-words-wrapper p-0 m-0">
-                        <b class="is-visible">Movie</b>
-                        <b>Event</b>
-                        <b>Sport</b>
+                        @foreach ($heroWords as $i => $word)
+                            <b class="{{ $i === 0 ? 'is-visible' : '' }}">{{ $word }}</b>
+                        @endforeach
                     </span>
                 </h1>
-                <p>Safe, secure, reliable ticketing.Your ticket to live entertainment!</p>
+                <p>{{ \App\Models\Setting::getValue('hero_subtitle', 'Safe, secure, reliable ticketing. Your ticket to live entertainment!') }}</p>
             </div>
         </div>
     </section>
@@ -22,7 +155,7 @@
     <!-- ==========Ticket-Search========== -->
     <section class="search-ticket-section padding-top pt-lg-0">
         <div class="container">
-            <div class="search-tab bg_img" data-background="{{ asset('assets/images/ticket/ticket-bg01.jpg') }}">
+            <div class="search-tab bg_img" data-background="{{ \App\Models\Setting::image('search_bg', 'assets/images/ticket/ticket-bg01.jpg') }}">
                 <div class="row align-items-center mb--20">
                     <div class="col-lg-6 mb-20">
                         <div class="search-ticket-header">
@@ -201,38 +334,42 @@
     <section class="movie-section padding-top padding-bottom bg-two">
         <div class="container">
             <div class="row flex-wrap-reverse justify-content-center">
-                <div class="col-lg-3 col-sm-10  mt-50 mt-lg-0">
+                <div class="col-lg-3 col-sm-10 mt-50 mt-lg-0 d-none d-lg-block">
                     <div class="widget-1 widget-facility">
                         <div class="widget-1-body">
                             <ul>
                                 <li>
                                     <a href="#0">
                                         <span class="img"><img src="{{ asset('assets/images/sidebar/icons/sidebar01.png') }}" alt="sidebar"></span>
-                                        <span class="cate">24X7 Care</span>
+                                        <span class="cate">{{ \App\Models\Setting::getValue('badge_1', '24X7 Care') }}</span>
                                     </a>
                                 </li>
                                 <li>
                                     <a href="#0">
                                         <span class="img"><img src="{{ asset('assets/images/sidebar/icons/sidebar02.png') }}" alt="sidebar"></span>
-                                        <span class="cate">100% Assurance</span>
+                                        <span class="cate">{{ \App\Models\Setting::getValue('badge_2', '100% Assurance') }}</span>
                                     </a>
                                 </li>
                                 <li>
                                     <a href="#0">
                                         <span class="img"><img src="{{ asset('assets/images/sidebar/icons/sidebar03.png') }}" alt="sidebar"></span>
-                                        <span class="cate">Our Promise</span>
+                                        <span class="cate">{{ \App\Models\Setting::getValue('badge_3', 'Our Promise') }}</span>
                                     </a>
                                 </li>
                             </ul>
                         </div>
                     </div>
-                    <div class="widget-1 widget-banner">
-                        <div class="widget-1-body">
-                            <a href="#0">
-                                <img src="{{ asset('assets/images/sidebar/banner/banner01.jpg') }}" alt="banner">
-                            </a>
+                    @if ($sidebarBanners->isNotEmpty())
+                        @php $b = $sidebarBanners->first(); @endphp
+                        @php $bimg = str_starts_with($b->image, 'http') ? $b->image : (str_starts_with($b->image, 'assets/') ? asset($b->image) : asset('storage/' . ltrim($b->image, '/'))); @endphp
+                        <div class="widget-1 widget-banner">
+                            <div class="widget-1-body">
+                                <a href="{{ $b->link ?: '#0' }}">
+                                    <img src="{{ $bimg }}" alt="{{ $b->title }}">
+                                </a>
+                            </div>
                         </div>
-                    </div>
+                    @endif
                     <div class="widget-1 widget-trending-search">
                         <h3 class="title">Trending Searches</h3>
                         <div class="widget-1-body">
@@ -248,13 +385,16 @@
                             </ul>
                         </div>
                     </div>
-                    <div class="widget-1 widget-banner">
-                        <div class="widget-1-body">
-                            <a href="#0">
-                                <img src="{{ asset('assets/images/sidebar/banner/banner02.jpg') }}" alt="banner">
-                            </a>
+                    @foreach ($sidebarBanners->slice(1) as $b)
+                        @php $bimg = str_starts_with($b->image, 'http') ? $b->image : (str_starts_with($b->image, 'assets/') ? asset($b->image) : asset('storage/' . ltrim($b->image, '/'))); @endphp
+                        <div class="widget-1 widget-banner">
+                            <div class="widget-1-body">
+                                <a href="{{ $b->link ?: '#0' }}">
+                                    <img src="{{ $bimg }}" alt="{{ $b->title }}">
+                                </a>
+                            </div>
                         </div>
-                    </div>
+                    @endforeach
                 </div>
                 <div class="col-lg-9">
                     <div class="article-section padding-bottom">
@@ -264,7 +404,7 @@
                         </div>
                         <div class="row mb-30-none justify-content-center">
                             @foreach ($movies as $movie)
-                                <div class="col-sm-6 col-lg-4">
+                                <div class="col-6 col-md-4">
                                     <x-movie-card :movie="$movie" />
                                 </div>
                             @endforeach
@@ -277,7 +417,7 @@
                         </div>
                         <div class="row mb-30-none justify-content-center">
                             @foreach ($events as $event)
-                                <div class="col-sm-6 col-lg-4">
+                                <div class="col-6 col-md-4">
                                     <x-event-card :event="$event" />
                                 </div>
                             @endforeach
@@ -290,7 +430,7 @@
                         </div>
                         <div class="row mb-30-none justify-content-center">
                             @foreach ($sports as $sport)
-                                <div class="col-sm-6 col-lg-4">
+                                <div class="col-6 col-md-4">
                                     <x-sport-card :sport="$sport" />
                                 </div>
                             @endforeach

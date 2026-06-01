@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Events\BookingConfirmed;
 use App\Models\Booking;
 use App\Models\Payment;
+use App\Models\PopcornItem;
 use App\Services\PaymentService;
 use App\Services\SeatLockService;
 use Illuminate\Http\Request;
@@ -20,22 +21,72 @@ class CheckoutController extends Controller
     public function movie(Booking $booking)
     {
         $this->authorizeBooking($booking);
-        $booking->load(['seats.ticketClass', 'bookable', 'showtime.screen.cinema']);
-        return view('checkout.movie', compact('booking'));
+        $booking->load(['seats.ticketClass', 'bookable', 'showtime.screen.cinema', 'addons']);
+        $popcorn = PopcornItem::where('is_active', true)->get();
+        return view('checkout.movie', compact('booking', 'popcorn'));
+    }
+
+    /**
+     * AJAX: replace the booking's snacks/add-ons and re-total (mirrors the
+     * mobile app's POST /bookings/{id}/addons). Pending bookings only.
+     */
+    public function addons(Request $request, Booking $booking)
+    {
+        $this->authorizeBooking($booking);
+        abort_unless($booking->status === 'pending', 422, 'Only pending bookings can be modified.');
+
+        $data = $request->validate([
+            'items' => 'present|array',
+            'items.*.popcorn_item_id' => 'required|integer|exists:popcorn_items,id',
+            'items.*.quantity' => 'required|integer|min:1|max:50',
+        ]);
+
+        DB::transaction(function () use ($booking, $data) {
+            $booking->addons()->delete();
+            foreach ($data['items'] as $row) {
+                $item = PopcornItem::find($row['popcorn_item_id']);
+                $booking->addons()->create([
+                    'popcorn_item_id' => $item->id,
+                    'quantity' => $row['quantity'],
+                    'price' => $item->price,
+                ]);
+            }
+            $seats = (float) $booking->seats()->sum('price');
+            $addons = (float) $booking->addons()->selectRaw('COALESCE(SUM(price * quantity),0) t')->value('t');
+            $net = max(0, $seats + $addons - (float) $booking->discount_amount);
+            $total = $net * (1 + (float) config('app.vat_rate'));
+            $booking->update(['total_amount' => round($total, 2)]);
+        });
+
+        $booking->refresh();
+        $addonsTotal = (float) $booking->addons()->selectRaw('COALESCE(SUM(price * quantity),0) t')->value('t');
+        // total_amount is VAT-inclusive; derive the ex-VAT subtotal and the VAT.
+        $rate = (float) config('app.vat_rate');
+        $subtotal = round($booking->total_amount / (1 + $rate), 2);
+        $vat = round($booking->total_amount - $subtotal, 2);
+
+        return response()->json([
+            'addons_total' => $addonsTotal,
+            'subtotal' => $subtotal,
+            'vat' => $vat,
+            'payable' => (float) $booking->total_amount,
+        ]);
     }
 
     public function event(Booking $booking)
     {
         $this->authorizeBooking($booking);
-        $booking->load('bookable', 'seats');
-        return view('checkout.event', compact('booking'));
+        $booking->load('bookable', 'seats', 'addons');
+        $popcorn = PopcornItem::where('is_active', true)->get();
+        return view('checkout.event', compact('booking', 'popcorn'));
     }
 
     public function sport(Booking $booking)
     {
         $this->authorizeBooking($booking);
-        $booking->load('bookable', 'seats');
-        return view('checkout.sport', compact('booking'));
+        $booking->load('bookable', 'seats', 'addons');
+        $popcorn = PopcornItem::where('is_active', true)->get();
+        return view('checkout.sport', compact('booking', 'popcorn'));
     }
 
     /**

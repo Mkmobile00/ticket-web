@@ -17,10 +17,15 @@
     <link rel="stylesheet" href="{{ asset('assets/css/nice-select.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/jquery.animatedheadline.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/main.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/mobile-polish.css') }}">
 
     <link rel="shortcut icon" href="{{ asset('assets/images/favicon.png') }}" type="image/x-icon">
 
     <title>@yield('title', config('app.name', 'Boleto') . ' - Online Ticket Booking')</title>
+    <style>
+        /* Stop sideways drag from any element that's slightly wider than the screen. */
+        html, body { overflow-x: hidden; max-width: 100%; }
+    </style>
     @stack('styles')
 </head>
 
@@ -46,6 +51,7 @@
     @yield('content')
 
     @include('partials.footer')
+    @include('partials.city-modal')
 
     <script src="{{ asset('assets/js/jquery-3.3.1.min.js') }}"></script>
     <script src="{{ asset('assets/js/modernizr-3.6.0.min.js') }}"></script>

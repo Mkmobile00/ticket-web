@@ -72,25 +72,30 @@
     <style>
         /* Original seat-icon look: the theme seat image as a mask, filled with the
            status colour, so each seat is a crisp seat shape (not a flat box). */
-        #seat-area{list-style:none;padding:0;margin:0 auto;max-width:940px;}
+        /* Let wide seat grids scroll horizontally inside the card instead of breaking the page. */
+        .screen-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px;}
+        #seat-area{list-style:none;padding:0;margin:0 auto;max-width:940px;min-width:max-content;}
         #seat-area .seat-line{display:flex;align-items:center;justify-content:center;gap:14px;margin:6px 0;}
         #seat-area .seat-line > .rl{flex:0 0 24px;width:24px;text-align:center;color:#9aa3af;font-size:13px;font-weight:600;}
         #seat-area .seats{display:flex;flex-wrap:nowrap;gap:7px;justify-content:center;width:auto !important;flex:0 1 auto;}
-        #seat-area .single-seat{position:relative;cursor:pointer;width:30px;height:30px;padding:0;}
+        #seat-area .single-seat{position:relative;cursor:pointer;width:34px;height:32px;padding:0;}
         #seat-area .single-seat .seat-shape{
-            display:block;width:30px;height:30px;
+            display:block;width:34px;height:32px;
             -webkit-mask:url('{{ asset('assets/images/movie/seat01-free.png') }}') center/contain no-repeat;
                     mask:url('{{ asset('assets/images/movie/seat01-free.png') }}') center/contain no-repeat;
             background:#46597a;transition:background .15s ease, transform .1s ease;
         }
-        #seat-area .single-seat .sit-num{position:absolute;top:46%;left:50%;transform:translate(-50%,-50%);font-size:10px;color:#fff;pointer-events:none;}
+        #seat-area .single-seat .sit-num{position:absolute;top:46%;left:50%;transform:translate(-50%,-50%);font-size:9px;color:#fff;pointer-events:none;white-space:nowrap;}
         #seat-area .single-seat:hover .seat-shape{transform:translateY(-2px);}
         #seat-area .single-seat.is-mine   .seat-shape{background:#2f9e6f;}
         #seat-area .single-seat.is-locked .seat-shape{background:#e7b400;}
         #seat-area .single-seat.is-booked .seat-shape{background:#c0392b;}
+        #seat-area .single-seat.is-blocked .seat-shape{background:#9aa3af;opacity:.7;}
+        #seat-area .single-seat.is-aisle{background:transparent;cursor:default;}
+        #seat-area .single-seat.is-aisle:hover .seat-shape{transform:none;}
         #seat-area .single-seat.taken{cursor:not-allowed;}
         #seat-area .single-seat.taken:hover .seat-shape{transform:none;}
-        @media(max-width:600px){ #seat-area .single-seat,#seat-area .single-seat .seat-shape{width:22px;height:22px;} #seat-area .seats{gap:4px;} }
+        @media(max-width:600px){ #seat-area .single-seat,#seat-area .single-seat .seat-shape{width:30px;height:28px;} #seat-area .single-seat .sit-num{font-size:8px;} #seat-area .seats{gap:4px;} }
     </style>
     @endpush
     @push('scripts')
@@ -149,13 +154,21 @@
                 const lblL = document.createElement('span'); lblL.className = 'rl'; lblL.textContent = row.row;
                 const seats = document.createElement('div'); seats.className = 'seats';
                 row.seats.forEach(seat => {
+                    const type = seat.type || 'seat';
+                    if (type !== 'seat') {
+                        // Aisle and blocked both render as empty walking space (no box).
+                        const sp = document.createElement('li');
+                        sp.className = 'single-seat is-aisle';
+                        seats.appendChild(sp);
+                        return;
+                    }
                     priceBySeat[seat.id] = seat.price || 0;
-                    const num = seat.id.split('-')[1];
+                    const label = seat.id.replace('-', ''); // e.g. "A1"
                     const cell = document.createElement('li');
                     cell.className = 'single-seat';
                     cell.dataset.id = seat.id;
                     cell.title = seat.id + (seat.tier ? ' · ' + seat.tier + ' $' + seat.price : '') + ' — ' + seat.status;
-                    cell.innerHTML = '<span class="seat-shape"></span><span class="sit-num">' + num + '</span>';
+                    cell.innerHTML = '<span class="seat-shape"></span><span class="sit-num">' + label + '</span>';
                     cellById[seat.id] = cell;
                     if (seat.status === 'mine') selected.add(seat.id);
                     paint(cell, seat.status);
@@ -179,6 +192,7 @@
                 if (freeEl) freeEl.textContent = (data.counts?.available ?? 0);
                 if (!built) { build(data); return; }
                 (data.rows||[]).forEach(r => r.seats.forEach(seat => {
+                    if ((seat.type || 'seat') !== 'seat') return;
                     const cell = cellById[seat.id]; if (!cell) return;
                     if (selected.has(seat.id) && seat.status !== 'booked') { paint(cell, 'mine'); return; }
                     if (seat.status === 'booked') selected.delete(seat.id);

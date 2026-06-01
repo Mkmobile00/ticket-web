@@ -45,6 +45,16 @@ class SeatBookingService
             }
         }
 
+        // Reject seats that aren't real bookable positions (aisle / blocked / out of range).
+        $bookable = method_exists($seatable, 'bookableSeatIds') ? $seatable->bookableSeatIds() : [];
+        if (! empty($bookable)) {
+            foreach ($seatIds as $seat) {
+                if (! isset($bookable[$seat])) {
+                    throw ValidationException::withMessages(['seats' => "Seat {$seat} is not available for selection."]);
+                }
+            }
+        }
+
         $context = $seatable->seatContext();
 
         // 1) Atomic lock — all or nothing.
@@ -62,6 +72,8 @@ class SeatBookingService
                 foreach ($seatIds as $seat) {
                     $total += $rowTier[strtoupper(explode('-', $seat)[0])]['price'];
                 }
+                // Add VAT so total_amount is the actual (VAT-inclusive) charge.
+                $total = round($total * (1 + (float) config('app.vat_rate')), 2);
 
                 $booking = Booking::create([
                     'user_id' => $userId,

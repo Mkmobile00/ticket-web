@@ -92,37 +92,7 @@
                             </div>
                         </div>
                     @elseif ($type === 'seat-layout')
-                        @php
-                            $sl = old($name, $item->{$name} ?? []);
-                            if (is_string($sl)) {
-                                $decoded = json_decode($sl, true);
-                                $sl = is_array($decoded) ? $decoded : [];
-                            }
-                            $slRows = (array) ($sl['rows'] ?? []);
-                            $slCounts = (array) ($sl['seats_per_row'] ?? []);
-                            $pairs = [];
-                            foreach ($slRows as $i => $r) {
-                                $pairs[] = ['row' => $r, 'count' => $slCounts[$i] ?? 20];
-                            }
-                            if (empty($pairs)) {
-                                $pairs[] = ['row' => 'A', 'count' => 20];
-                            }
-                        @endphp
-                        <div class="seat-layout" data-name="{{ $name }}">
-                            <div class="seat-layout-rows">
-                                @foreach ($pairs as $p)
-                                    <div class="seat-row">
-                                        <input type="text" name="{{ $name }}[rows][]" value="{{ $p['row'] }}" maxlength="2" class="form-control row-letter" placeholder="A">
-                                        <span class="lbl">row,</span>
-                                        <input type="number" name="{{ $name }}[seats_per_row][]" value="{{ $p['count'] }}" min="1" max="200" class="form-control row-count">
-                                        <span class="lbl">seats</span>
-                                        <button type="button" class="btn btn-sm btn-outline-danger remove-row" title="Remove row">×</button>
-                                    </div>
-                                @endforeach
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary add-row mt-2">+ Add Row</button>
-                            <div class="seat-layout-total">Total seats: <strong class="total-display">0</strong> (auto-calculated from rows above)</div>
-                        </div>
+                        @include('admin.partials.seat-layout-editor', ['name' => $name, 'value' => old($name, $item->{$name} ?? [])])
                     @elseif ($type === 'rows')
                         @php
                             $selected = old($name, $item->{$name} ?? []);

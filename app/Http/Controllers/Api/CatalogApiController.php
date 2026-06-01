@@ -27,7 +27,8 @@ class CatalogApiController extends Controller
     /** GET /api/v1/cities */
     public function cities()
     {
-        return response()->json(['data' => City::orderBy('name')->get(['id', 'name', 'slug'])]);
+        return response()->json(['data' => City::orderBy('name')->get(['id', 'name', 'slug', 'icon'])
+            ->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'slug' => $c->slug, 'icon' => $c->icon_url])]);
     }
 
     /** GET /api/v1/genres · /languages · /formats — filter dropdown options. */
@@ -192,10 +193,6 @@ class CatalogApiController extends Controller
         $seatable = $this->resolveSeatable($type, $id);
         abort_unless($seatable, 404);
 
-        $layout = $seatable->seatLayoutArray();
-        $rows = $layout['rows'] ?: ['A', 'B', 'C', 'D', 'E'];
-        $perRow = $layout['seats_per_row'] ?: array_fill(0, count($rows), 20);
-
         $owner = $request->user() ? 'user:' . $request->user()->id : null;
         $lockMap = $this->locks->lockedSeatMap($seatable->seatContext());
 
@@ -210,21 +207,27 @@ class CatalogApiController extends Controller
             foreach ($t['rows'] as $r) $tierByRow[strtoupper($r)] = $t;
         }
 
+        // Build the response grid from the normalized seat grid (seat | aisle | blocked).
         $grid = [];
-        foreach ($rows as $i => $row) {
-            $row = strtoupper($row);
-            $seats = [];
-            for ($n = 1; $n <= ($perRow[$i] ?? 0); $n++) {
-                $sid = $row . '-' . $n;
+        foreach ($seatable->seatGrid() as $row) {
+            $label = $row['label'];
+            $cells = [];
+            foreach ($row['cells'] as $cell) {
+                if (($cell['type'] ?? 'seat') !== 'seat') {
+                    $cells[] = ['type' => $cell['type']]; // aisle | blocked
+                    continue;
+                }
+                $sid = $cell['id'];
                 $status = $booked->has($sid) ? 'booked'
                     : (isset($lockMap[$sid]) ? ($lockMap[$sid] === $owner ? 'mine' : 'locked') : 'available');
-                $seats[] = [
+                $cells[] = [
+                    'type' => 'seat',
                     'id' => $sid, 'status' => $status,
-                    'tier' => $tierByRow[$row]['name'] ?? null,
-                    'price' => $tierByRow[$row]['price'] ?? null,
+                    'tier' => $tierByRow[$label]['name'] ?? null,
+                    'price' => $tierByRow[$label]['price'] ?? null,
                 ];
             }
-            $grid[] = ['row' => $row, 'tier' => $tierByRow[$row]['name'] ?? null, 'seats' => $seats];
+            $grid[] = ['row' => $label, 'tier' => $tierByRow[$label]['name'] ?? null, 'seats' => $cells];
         }
 
         return response()->json([

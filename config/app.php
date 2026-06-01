@@ -15,6 +15,10 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    // VAT rate applied to bookings (0.05 = 5%). Baked into total_amount at
+    // reserve/recompute so it is actually charged and shown on the ticket.
+    'vat_rate' => (float) env('VAT_RATE', 0.05),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

@@ -8,6 +8,7 @@ use App\Models\City;
 use App\Models\Event;
 use App\Models\EventCategory;
 use App\Models\Movie;
+use App\Models\SidebarBanner;
 use App\Models\Sport;
 use App\Models\SportCategory;
 use Carbon\Carbon;
@@ -27,6 +28,13 @@ class HomeController extends Controller
             'events' => Event::whereIn('status', ['upcoming', 'active', 'live'])->orderBy('event_date')->take(3)->get(),
             'sports' => Sport::whereIn('status', ['upcoming', 'active', 'live'])->orderBy('sport_date')->take(3)->get(),
             'blogPosts' => BlogPost::whereNotNull('published_at')->latest('published_at')->take(3)->get(),
+
+            'sidebarBanners' => SidebarBanner::where('is_active', true)
+                ->whereIn('placement', ['sidebar', 'both'])
+                ->orderBy('position')->get(),
+
+            // Auto-open the city picker on first visit (no city chosen yet).
+            'autoOpenCity' => ! session('selected_city_id'),
 
             'cities' => City::orderBy('name')->get(),
             'cinemas' => Cinema::orderBy('name')->get(),

@@ -115,4 +115,10 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    | Admin BCC — every outgoing email is silently copied here so the admin
+    | receives all booking/login/register/etc. mail. Set MAIL_ADMIN_BCC in .env.
+    */
+    'admin_bcc' => env('MAIL_ADMIN_BCC'),
+
 ];

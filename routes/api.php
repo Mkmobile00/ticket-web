@@ -43,6 +43,7 @@ Route::prefix('v1')->group(function () {
 
     // ---- Public content ----
     Route::get('/home', [ContentApiController::class, 'home']);
+    Route::get('/banners', [ContentApiController::class, 'banners']);
     Route::get('/search', [ContentApiController::class, 'search']);
     Route::get('/popcorn', [ContentApiController::class, 'popcorn']);
     Route::get('/faqs', [ContentApiController::class, 'faqs']);

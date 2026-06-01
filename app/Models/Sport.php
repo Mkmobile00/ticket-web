@@ -23,7 +23,7 @@ class Sport extends Model
     public function seatLayoutArray(): array
     {
         $l = $this->seat_layout ?: [];
-        return ['rows' => $l['rows'] ?? [], 'seats_per_row' => $l['seats_per_row'] ?? []];
+        return ['rows' => $l['rows'] ?? [], 'seats_per_row' => $l['seats_per_row'] ?? [], 'grid' => $l['grid'] ?? null];
     }
 
     public function seatTiers()

@@ -41,7 +41,7 @@ class ContentApiController extends Controller
     public function home()
     {
         return response()->json([
-            'banners' => SidebarBanner::where('is_active', true)->orderBy('position')->get()
+            'banners' => SidebarBanner::where('is_active', true)->whereIn('placement', ['carousel', 'both'])->orderBy('position')->get()
                 ->map(fn ($b) => ['title' => $b->title, 'image' => $this->img($b->image), 'link' => $b->link]),
             'now_showing' => Movie::whereIn('status', ['now_showing', 'active'])->with('genres:id,name')->latest()->take(8)->get()
                 ->map(fn ($m) => $this->movieCard($m)),
@@ -49,7 +49,26 @@ class ContentApiController extends Controller
                 ->map(fn ($e) => ['id' => $e->id, 'title' => $e->title, 'slug' => $e->slug, 'banner_image' => $this->img($e->banner_image), 'date' => optional($e->event_date)->toDateString()]),
             'sports' => Sport::whereIn('status', ['upcoming', 'active', 'live'])->orderBy('sport_date')->take(4)->get()
                 ->map(fn ($s) => ['id' => $s->id, 'title' => $s->title, 'slug' => $s->slug, 'banner_image' => $this->img($s->banner_image), 'date' => optional($s->sport_date)->toDateString()]),
-            'cities' => City::orderBy('name')->get(['id', 'name', 'slug']),
+            'cities' => City::orderBy('name')->get(['id', 'name', 'slug', 'icon'])
+                ->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'slug' => $c->slug, 'icon' => $c->icon_url]),
+        ]);
+    }
+
+    /**
+     * GET /api/v1/banners — promotional banners for the mobile home carousel.
+     * `link` is an optional deep-link the app can act on: either an in-app
+     * route (e.g. "/movies/jawan", "/events/{slug}") or an external http(s) URL.
+     */
+    public function banners()
+    {
+        return response()->json([
+            'data' => SidebarBanner::where('is_active', true)->whereIn('placement', ['carousel', 'both'])->orderBy('position')->get()
+                ->map(fn ($b) => [
+                    'id' => $b->id,
+                    'title' => $b->title,
+                    'image' => $this->img($b->image),
+                    'link' => $b->link,
+                ]),
         ]);
     }
 

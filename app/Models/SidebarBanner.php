@@ -9,7 +9,7 @@ class SidebarBanner extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['title', 'image', 'link', 'position', 'is_active'];
+    protected $fillable = ['title', 'image', 'link', 'placement', 'position', 'is_active'];
 
     protected $casts = [
         'is_active' => 'boolean',
