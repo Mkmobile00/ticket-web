@@ -12,9 +12,12 @@ class PartnerController extends AdminController
 
     public function index()
     {
-        $items = ($this->modelClass)::query()->latest('id')->paginate(15);
+        $query = ($this->modelClass)::query()->latest('id');
+        $filters = $this->applyIndexFilters($query);
+        $items = $query->paginate(15)->withQueryString();
         return view('admin.crud.index', [
             'items' => $items,
+            'filters' => $filters,
             'resource' => $this->resource,
             'columns' => $cols = $this->columns(),
             'fkLabels' => $this->fkLabelMap($cols),

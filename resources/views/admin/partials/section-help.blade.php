@@ -5,7 +5,7 @@
         'cinema'       => ['🏢', 'Cinemas',        'Your venues (theatres), one per location in a city. Each cinema holds one or more Screens.'],
         'screen'       => ['🖥️', 'Screens',        'A hall inside a cinema. Set its seat layout (rows × seats here) — this is exactly the seat map customers see.'],
         'showtime'     => ['🕐', 'Showtimes',      'One movie playing on one screen at a date & time. THIS is what customers actually book.'],
-        'ticket-class' => ['🎟️', 'Ticket Classes', 'Price tiers for a single showtime (e.g. Classic ₹190, IMAX ₹600). You pick the showtime and which seat rows get this price.'],
+        'ticket-class' => ['🎟️', 'Ticket Classes', 'Price tiers for a single showtime (e.g. Classic ₹190, IMAX ₹600). Tip: to set a different price per row in one place, go to Showtimes → "Prices".'],
         'event'        => ['🎤', 'Events',         'Conferences, concerts & shows. Add the event, then give it ticket types (price tiers). Customers buy quantities — no seat map.'],
         'sport'        => ['🏟️', 'Sports',         'Matches & games. Add the fixture, then its ticket types (price tiers). Customers buy quantities — no seat map.'],
     ];

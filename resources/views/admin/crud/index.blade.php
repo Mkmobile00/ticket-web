@@ -11,6 +11,40 @@
     <a href="{{ route($routePrefix . '.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Create</a>
 </div>
 
+@if (!empty($filters))
+    <form method="GET" action="{{ route($routePrefix . '.index') }}" class="card card-body mb-3 py-3">
+        <div class="row g-2 align-items-end">
+            @if ($filters['searchable'])
+                <div class="col-12 col-md">
+                    <label class="form-label small mb-1 text-muted">Search</label>
+                    <input type="text" name="q" value="{{ $filters['q'] }}" class="form-control"
+                           placeholder="Search {{ $title }}…">
+                </div>
+            @endif
+            @foreach ($filters['fk'] as $f)
+                <div class="col-6 col-md-auto">
+                    <label class="form-label small mb-1 text-muted">{{ $f['label'] }}</label>
+                    <select name="{{ $f['name'] }}" class="form-select">
+                        <option value="">All</option>
+                        @foreach ($f['options'] as $val => $label)
+                            <option value="{{ $val }}" @selected((string) $f['selected'] === (string) $val)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endforeach
+            <div class="col-auto">
+                <button class="btn btn-primary"><i class="bi bi-funnel"></i> Filter</button>
+                @if ($filters['active'])
+                    <a href="{{ route($routePrefix . '.index') }}" class="btn btn-outline-secondary">Reset</a>
+                @endif
+            </div>
+        </div>
+    </form>
+    @if ($filters['active'])
+        <div class="text-muted small mb-2">{{ $items->total() }} result{{ $items->total() === 1 ? '' : 's' }} found.</div>
+    @endif
+@endif
+
 <div class="card">
     <div class="table-responsive">
         <table class="table table-admin mb-0">
@@ -55,6 +89,9 @@
                             </td>
                         @endforeach
                         <td class="text-end">
+                            @if ($resource === 'showtime')
+                                <a class="btn btn-sm btn-outline-success" href="{{ route('admin.showtimes.pricing', $item->id) }}" title="Set seat prices per row"><i class="bi bi-currency-dollar"></i> Prices</a>
+                            @endif
                             <a class="btn btn-sm btn-outline-primary" href="{{ route($routePrefix . '.edit', $item->id) }}"><i class="bi bi-pencil"></i></a>
                             <form method="POST" action="{{ route($routePrefix . '.destroy', $item->id) }}" class="d-inline" onsubmit="return confirm('Delete this {{ $resource }}?')">
                                 @csrf @method('DELETE')

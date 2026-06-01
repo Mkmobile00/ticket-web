@@ -160,6 +160,116 @@ abstract class AdminController extends Controller
             ->all();
     }
 
+    // ---- Index search & filtering (shared by all list pages) ---------------
+
+    /** Text columns (from the schema) that the `q` search box matches with LIKE. */
+    protected function searchableColumns(): array
+    {
+        $instance = new ($this->modelClass);
+        $table = $instance->getTable();
+        $cached = cache()->remember("admin.cols.$table", 60, function () use ($table) {
+            try {
+                return Schema::getColumns($table);
+            } catch (\Throwable $e) {
+                return [];
+            }
+        });
+        $meta = collect($cached)->keyBy('name');
+
+        $out = [];
+        foreach ($instance->getFillable() as $col) {
+            if (in_array($col, ['password', 'remember_token'])) continue;
+            if (str_ends_with($col, '_id')) continue;
+            $type = strtolower($meta[$col]['type_name'] ?? 'string');
+            // Plain text-ish columns only (skip json/blob/numeric/date).
+            if ($type === 'string' || str_contains($type, 'char') || str_contains($type, 'text')) {
+                if (str_contains($type, 'json')) continue;
+                $out[] = $col;
+            }
+        }
+        return $out;
+    }
+
+    /** [relationMethod => displayColumn] so the search box can also match related names. */
+    protected function searchRelations(): array
+    {
+        $instance = new ($this->modelClass);
+        $rels = [];
+        foreach ($instance->getFillable() as $col) {
+            if (! str_ends_with($col, '_id') || $col === 'id') continue;
+            $related = $this->resolveRelatedModel($col);
+            if (! $related) continue;
+            $method = Str::camel(Str::beforeLast($col, '_id'));
+            if (! method_exists($instance, $method)) continue;
+            $rInstance = new $related;
+            $disp = collect(['title', 'name', 'code', 'slug', 'email'])
+                ->first(fn ($c) => in_array($c, $rInstance->getFillable()));
+            if ($disp) $rels[$method] = $disp;
+        }
+        return $rels;
+    }
+
+    /** FK columns exposed as dropdown filters on the index. */
+    protected function indexFilterColumns(): array
+    {
+        $instance = new ($this->modelClass);
+        return array_values(array_filter(
+            $instance->getFillable(),
+            fn ($c) => str_ends_with($c, '_id') && $c !== 'id' && $this->resolveRelatedModel($c)
+        ));
+    }
+
+    /** Options for one FK filter dropdown. Override per-controller for nicer labels. */
+    protected function filterOptionsFor(string $col): array
+    {
+        $related = $this->resolveRelatedModel($col);
+        return $related ? $this->relatedOptions($related) : [];
+    }
+
+    /**
+     * Apply ?q= search and ?fk= filters from the request to $query.
+     * Returns metadata for the view's filter bar.
+     */
+    protected function applyIndexFilters($query): array
+    {
+        $request = request();
+        $q = trim((string) $request->query('q', ''));
+        $searchCols = $this->searchableColumns();
+        $searchRels = $this->searchRelations();
+
+        if ($q !== '') {
+            $query->where(function ($w) use ($q, $searchCols, $searchRels) {
+                foreach ($searchCols as $c) {
+                    $w->orWhere($c, 'like', "%{$q}%");
+                }
+                foreach ($searchRels as $method => $disp) {
+                    $w->orWhereHas($method, fn ($r) => $r->where($disp, 'like', "%{$q}%"));
+                }
+            });
+        }
+
+        $fk = [];
+        foreach ($this->indexFilterColumns() as $col) {
+            $val = $request->query($col);
+            if ($val !== null && $val !== '') {
+                $query->where($col, $val);
+            }
+            $fk[] = [
+                'name' => $col,
+                'label' => ucwords(str_replace(['_', ' id'], [' ', ''], $col)),
+                'options' => $this->filterOptionsFor($col),
+                'selected' => $val,
+            ];
+        }
+
+        return [
+            'q' => $q,
+            'searchable' => ! empty($searchCols) || ! empty($searchRels),
+            'fk' => $fk,
+            'active' => $q !== '' || collect($fk)->contains(fn ($f) => $f['selected'] !== null && $f['selected'] !== ''),
+        ];
+    }
+
     /**
      * Smart default: scalar fields nullable; *_id fields integer + exists check.
      */

@@ -38,6 +38,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('cinemas', CinemaController::class);
     Route::resource('screens', ScreenController::class);
     Route::resource('showtimes', ShowtimeController::class);
+    // Set a price per seat row for one showtime (groups rows into ticket-class tiers).
+    Route::get('showtimes/{showtime}/pricing', [TicketClassController::class, 'pricing'])->name('showtimes.pricing');
+    Route::post('showtimes/{showtime}/pricing', [TicketClassController::class, 'savePricing'])->name('showtimes.pricing.save');
     Route::resource('ticket-classes', TicketClassController::class);
     Route::resource('languages', LanguageController::class);
     Route::resource('formats', FormatController::class);

@@ -3,6 +3,33 @@
 @section('page-title', 'Bookings')
 
 @section('content')
+<form method="GET" action="{{ route('admin.bookings.index') }}" class="card card-body mb-3 py-3">
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-md">
+            <label class="form-label small mb-1 text-muted">Search</label>
+            <input type="text" name="q" value="{{ $q ?? '' }}" class="form-control" placeholder="Booking #, user name or email…">
+        </div>
+        <div class="col-6 col-md-auto">
+            <label class="form-label small mb-1 text-muted">Status</label>
+            <select name="status" class="form-select">
+                <option value="">All</option>
+                @foreach (($statuses ?? []) as $s)
+                    <option value="{{ $s }}" @selected(($status ?? '') === $s)>{{ ucfirst($s) }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary"><i class="bi bi-funnel"></i> Filter</button>
+            @if (($q ?? '') !== '' || ($status ?? '') !== '')
+                <a href="{{ route('admin.bookings.index') }}" class="btn btn-outline-secondary">Reset</a>
+            @endif
+        </div>
+    </div>
+</form>
+@if (($q ?? '') !== '' || ($status ?? '') !== '')
+    <div class="text-muted small mb-2">{{ $bookings->total() }} result{{ $bookings->total() === 1 ? '' : 's' }} found.</div>
+@endif
+
 <div class="card">
     <div class="table-responsive">
         <table class="table table-admin mb-0">

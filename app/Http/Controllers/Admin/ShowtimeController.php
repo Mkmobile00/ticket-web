@@ -14,13 +14,15 @@ class ShowtimeController extends AdminController
 
     public function index()
     {
-        $items = ($this->modelClass)::query()
+        $query = ($this->modelClass)::query()
             ->orderBy('show_date', 'desc')
             ->orderBy('show_time', 'desc')
-            ->orderBy('movie_id')
-            ->paginate(15);
+            ->orderBy('movie_id');
+        $filters = $this->applyIndexFilters($query);
+        $items = $query->paginate(15)->withQueryString();
         return view('admin.crud.index', [
             'items' => $items,
+            'filters' => $filters,
             'resource' => $this->resource,
             'columns' => $cols = $this->columns(),
             'fkLabels' => $this->fkLabelMap($cols),
@@ -42,6 +44,14 @@ class ShowtimeController extends AdminController
             }
         }
         return $fields;
+    }
+
+    protected function filterOptionsFor(string $col): array
+    {
+        if ($col === 'screen_id') {
+            return $this->screenOptions();
+        }
+        return parent::filterOptionsFor($col);
     }
 
     protected function fkLabelMap(array $columns): array

@@ -6,6 +6,7 @@ use App\Models\Showtime;
 use App\Models\TicketClass;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class TicketClassController extends AdminController
@@ -68,6 +69,14 @@ class TicketClassController extends AdminController
             ->all();
     }
 
+    protected function filterOptionsFor(string $col): array
+    {
+        if ($col === 'showtime_id') {
+            return $this->showtimeOptions();
+        }
+        return parent::filterOptionsFor($col);
+    }
+
     protected function rules(?Model $item = null): array
     {
         $rules = parent::rules($item);
@@ -78,9 +87,12 @@ class TicketClassController extends AdminController
 
     public function index()
     {
-        $items = ($this->modelClass)::query()->latest('id')->paginate(15);
+        $query = ($this->modelClass)::query()->latest('id');
+        $filters = $this->applyIndexFilters($query);
+        $items = $query->paginate(15)->withQueryString();
         return view('admin.crud.index', [
             'items' => $items,
+            'filters' => $filters,
             'resource' => $this->resource,
             'columns' => $cols = $this->columns(),
             'fkLabels' => $this->fkLabelMap($cols),
@@ -138,6 +150,90 @@ class TicketClassController extends AdminController
     {
         ($this->modelClass)::findOrFail($id)->delete();
         return back()->with('status', 'Deleted.');
+    }
+
+    // ---- Per-row pricing for a whole showtime -------------------------------
+
+    /** Row labels that physically exist (have at least one seat) on a showtime's screen. */
+    private function showtimeRows(Showtime $showtime): array
+    {
+        return collect($showtime->seatGrid())
+            ->filter(fn ($r) => collect($r['cells'])->contains(fn ($c) => ($c['type'] ?? null) === 'seat'))
+            ->pluck('label')
+            ->map(fn ($l) => strtoupper((string) $l))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /** Grid editor: set a price (and optional tier name) for every seat row of one showtime. */
+    public function pricing(Showtime $showtime)
+    {
+        $showtime->load('movie', 'screen.cinema', 'ticketClasses');
+
+        // Current row -> ['price'=>float, 'name'=>string] from the existing tiers.
+        $current = [];
+        foreach ($showtime->seatTiers() as $tier) {
+            foreach ((array) $tier['rows'] as $r) {
+                $current[strtoupper((string) $r)] = ['price' => $tier['price'], 'name' => $tier['name']];
+            }
+        }
+
+        return view('admin.showtimes.seat-pricing', [
+            'showtime' => $showtime,
+            'rows' => $this->showtimeRows($showtime),
+            'current' => $current,
+            'title' => 'Seat Prices',
+        ]);
+    }
+
+    /** Save per-row prices: group rows by (name, price) and rebuild this showtime's tiers. */
+    public function savePricing(Request $request, Showtime $showtime)
+    {
+        $request->validate([
+            'prices' => 'array',
+            'prices.*' => 'nullable|numeric|min:0|max:1000000',
+            'labels' => 'array',
+            'labels.*' => 'nullable|string|max:50',
+        ]);
+
+        $rows = $this->showtimeRows($showtime);
+        $prices = (array) $request->input('prices', []);
+        $labels = (array) $request->input('labels', []);
+
+        // Build one tier per distinct (name, price); rows left blank stay unpriced.
+        $groups = [];
+        foreach ($rows as $row) {
+            $raw = $prices[$row] ?? null;
+            if ($raw === null || $raw === '') {
+                continue;
+            }
+            $price = round((float) $raw, 2);
+            $name = trim((string) ($labels[$row] ?? ''));
+            if ($name === '') {
+                $name = 'Rs ' . rtrim(rtrim(number_format($price, 2, '.', ''), '0'), '.');
+            }
+            $key = $name . '|' . $price;
+            $groups[$key]['name'] = $name;
+            $groups[$key]['price'] = $price;
+            $groups[$key]['rows'][] = $row;
+        }
+
+        // Rebuild tiers. Deleting is safe: booking_seats.ticket_class_id is nullOnDelete
+        // and each booked seat already stores its own price + tier_label.
+        DB::transaction(function () use ($showtime, $groups) {
+            $showtime->ticketClasses()->delete();
+            foreach ($groups as $g) {
+                $showtime->ticketClasses()->create([
+                    'name' => $g['name'],
+                    'price' => $g['price'],
+                    'seat_rows' => array_values($g['rows']),
+                ]);
+            }
+        });
+
+        return redirect()->route('admin.showtimes.pricing', $showtime)
+            ->with('status', count($groups) . ' price tier(s) saved from ' . count($rows) . ' rows.');
     }
 }
 
