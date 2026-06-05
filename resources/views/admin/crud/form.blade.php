@@ -36,6 +36,10 @@
     .seat-row .lbl { color:#6c757d; font-size:.9rem; }
     .seat-layout-total { margin-top:8px; font-size:.9rem; color:#495057; }
     .seat-layout-total strong { color:#0d6efd; }
+
+    .kv-rows { display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+    .kv-row { display:flex; align-items:center; gap:10px; }
+    .kv-row input:first-of-type { max-width:160px; }
 </style>
 @endpush
 
@@ -140,6 +144,38 @@
                         @if (empty($field['options']))
                             <div class="row-picker-help">None available.</div>
                         @endif
+                    @elseif ($type === 'kv-repeater')
+                        @php
+                            $kvOld = old($name);
+                            if (is_array($kvOld) && (isset($kvOld['value']) || isset($kvOld['label']))) {
+                                $vs = (array) ($kvOld['value'] ?? []);
+                                $ls = (array) ($kvOld['label'] ?? []);
+                                $kvRows = [];
+                                foreach ($vs as $i => $v) { $kvRows[] = ['value' => $v, 'label' => $ls[$i] ?? '']; }
+                            } else {
+                                $kvRows = $field['rows'] ?? [];
+                            }
+                            $valPh = $field['value_placeholder'] ?? 'Value';
+                            $lblPh = $field['label_placeholder'] ?? 'Label';
+                        @endphp
+                        <div class="kv-repeater" data-name="{{ $name }}" data-valph="{{ $valPh }}" data-lblph="{{ $lblPh }}">
+                            <div class="kv-rows">
+                                @forelse ($kvRows as $row)
+                                    <div class="kv-row">
+                                        <input class="form-control" name="{{ $name }}[value][]" value="{{ $row['value'] ?? '' }}" placeholder="{{ $valPh }}">
+                                        <input class="form-control" name="{{ $name }}[label][]" value="{{ $row['label'] ?? '' }}" placeholder="{{ $lblPh }}">
+                                        <button type="button" class="btn btn-outline-danger kv-remove" title="Remove row">&times;</button>
+                                    </div>
+                                @empty
+                                    <div class="kv-row">
+                                        <input class="form-control" name="{{ $name }}[value][]" value="" placeholder="{{ $valPh }}">
+                                        <input class="form-control" name="{{ $name }}[label][]" value="" placeholder="{{ $lblPh }}">
+                                        <button type="button" class="btn btn-outline-danger kv-remove" title="Remove row">&times;</button>
+                                    </div>
+                                @endforelse
+                            </div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm kv-add">+ Add row</button>
+                        </div>
                     @elseif ($type === 'checkbox')
                         <div><input type="checkbox" name="{{ $name }}" value="1" @checked($value)></div>
                     @elseif ($type === 'image')
@@ -283,6 +319,36 @@
 
         recalcTotal();
         if (totalInput) totalInput.readOnly = true;
+    });
+
+    // Key/value repeater (e.g. event statistics).
+    document.querySelectorAll('.kv-repeater').forEach(function (container) {
+        const name = container.dataset.name;
+        const valPh = container.dataset.valph || 'Value';
+        const lblPh = container.dataset.lblph || 'Label';
+        const rows = container.querySelector('.kv-rows');
+
+        function bindRemove(row) {
+            row.querySelector('.kv-remove').addEventListener('click', function () {
+                if (rows.children.length <= 1) {
+                    row.querySelectorAll('input').forEach(i => { i.value = ''; });
+                } else {
+                    row.remove();
+                }
+            });
+        }
+        rows.querySelectorAll('.kv-row').forEach(bindRemove);
+
+        container.querySelector('.kv-add').addEventListener('click', function () {
+            const div = document.createElement('div');
+            div.className = 'kv-row';
+            div.innerHTML =
+                '<input class="form-control" name="' + name + '[value][]" value="" placeholder="' + valPh + '">' +
+                '<input class="form-control" name="' + name + '[label][]" value="" placeholder="' + lblPh + '">' +
+                '<button type="button" class="btn btn-outline-danger kv-remove" title="Remove row">&times;</button>';
+            rows.appendChild(div);
+            bindRemove(div);
+        });
     });
 })();
 </script>

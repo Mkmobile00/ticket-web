@@ -12,7 +12,7 @@ class Event extends Model
     use HasFactory, HasYoutubeTrailer, Seatable;
 
     protected $fillable = [
-        'title', 'slug', 'description', 'banner_image', 'trailer_url', 'event_date',
+        'title', 'slug', 'description', 'banner_image', 'detail_image', 'trailer_url', 'event_date',
         'start_time', 'end_time', 'address', 'city_id', 'organizer', 'latitude', 'longitude', 'status', 'seat_layout'
     ];
 

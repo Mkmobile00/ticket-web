@@ -1587,7 +1587,7 @@ function EventPage() {
             {info.intro.map((p, i) => <p key={i}>{p}</p>)}
             <button className="btn-cta" onClick={book}>BOOK TICKETS</button>
           </div>
-          <div className="ev-intro-img"><img src={img(introImg, 640, 460)} alt="" /></div>
+          <div className="ev-intro-img"><img src={ev.detail || ev.image || img(introImg, 640, 460)} alt="" /></div>
         </div>
       </section>
 

@@ -329,6 +329,7 @@ class DesignController extends Controller
                     'kind'   => 'event',
                     'title'  => $e->title,
                     'image'  => $this->img($e->banner_image),
+                    'detail' => $this->img($e->detail_image),
                     'addr1'  => (string) $e->address,
                     'addr2'  => $e->city->name ?? '',
                     'day'    => $d->format('d'),
