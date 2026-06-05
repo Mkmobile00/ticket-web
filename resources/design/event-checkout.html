@@ -1386,7 +1386,7 @@ function Footer({ D, onToast }) {
         </div>
         <div className="foot-bottom">
           <span>Copyright © 2026. All Rights Reserved By <b>BOLETO</b></span>
-          <span className="links">{D.footer.links.map(l => <a key={l} onClick={() => onToast(l)}>{l}</a>)}</span>
+          <span className="links">{D.footer.links.map((l, i) => <a key={i} href={(l && l.href) || "#"}>{(l && l.label) || l}</a>)}</span>
         </div>
       </div>
     </footer>

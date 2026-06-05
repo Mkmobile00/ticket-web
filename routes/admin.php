@@ -76,6 +76,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('contact-messages', ContactMessageController::class)->only(['index', 'show', 'destroy']);
     Route::resource('newsletter', AdminNewsletterController::class)->only(['index', 'destroy']);
     Route::resource('banners', BannerController::class);
+    Route::resource('menus', \App\Http\Controllers\Admin\MenuController::class);
     Route::resource('faqs', FaqController::class);
     Route::resource('partners', PartnerController::class);
 

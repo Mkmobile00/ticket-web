@@ -7,6 +7,7 @@ use App\Models\Cinema;
 use App\Models\City;
 use App\Models\Event;
 use App\Models\Faq;
+use App\Models\MenuItem;
 use App\Models\Movie;
 use App\Models\Partner;
 use App\Models\Setting;
@@ -220,6 +221,7 @@ class DesignController extends Controller
             'searchCinemas' => Cinema::orderBy('name')->pluck('name')->all(),
             'auth'         => ['user' => $customer],
             'nav'          => $this->nav($movies, $events, $sports),
+            'footer'       => $this->footerData(),
             'sidebarBanners' => $this->sidebarBanners(),
         ];
     }
@@ -305,8 +307,45 @@ class DesignController extends Controller
         return response()->json(['type' => $kind, 'count' => count($results), 'results' => $results]);
     }
 
-    /** Build a functional, data-driven top nav (sections + real item dropdowns). */
+    /**
+     * Top nav. Built from the admin-managed header menu (MenuItem) when present,
+     * otherwise the data-driven default (sections + real item dropdowns).
+     */
     private function nav(array $movies, array $events, array $sports): array
+    {
+        $items = MenuItem::where('location', 'header')->where('is_active', true)
+            ->orderBy('position')->orderBy('id')->get();
+
+        if ($items->isEmpty()) {
+            return $this->defaultNav($movies, $events, $sports);
+        }
+
+        return $items->whereNull('parent_id')->map(function ($it) use ($items) {
+            $node = ['label' => $it->label, 'href' => $it->url, 'on' => $it->url === '/'];
+            $children = $items->where('parent_id', $it->id)->values();
+            if ($children->isNotEmpty()) {
+                $node['drop'] = $children->map(fn ($c) => ['label' => $c->label, 'href' => $c->url])->all();
+            }
+            return $node;
+        })->values()->all();
+    }
+
+    /** Footer = social icons + admin-managed footer menu links (falls back to static). */
+    private function footerData(): array
+    {
+        $links = MenuItem::where('location', 'footer')->where('is_active', true)->whereNull('parent_id')
+            ->orderBy('position')->orderBy('id')->get()
+            ->map(fn ($it) => ['label' => $it->label, 'href' => $it->url])->all();
+
+        $footer = ['social' => ['fb', 'tw', 'ig', 'yt']];
+        if (! empty($links)) {
+            $footer['links'] = $links;
+        }
+        return $footer;
+    }
+
+    /** Fallback nav when no header menu items are configured. */
+    private function defaultNav(array $movies, array $events, array $sports): array
     {
         $drop = fn (array $items, string $page, string $key) => collect($items)->take(6)
             ->map(fn ($x) => ['label' => $x['title'], 'href' => $page . '?' . $key . '=' . \Illuminate\Support\Str::slug($x['title'])])
@@ -319,7 +358,7 @@ class DesignController extends Controller
             ['label' => 'Sports', 'href' => '/sports', 'drop' => $drop($sports, '/event', 'e')],
             ['label' => 'Blog', 'href' => '/blog'],
             ['label' => 'My Bookings', 'href' => '/account'],
-            ['label' => 'Contact', 'href' => '/#subscribe'],
+            ['label' => 'Contact', 'href' => '/contact'],
         ];
     }
 

@@ -74,6 +74,7 @@
                 ['Bookings', 'admin.bookings.index', 'ticket-perforated'],
                 ['Cities', 'admin.cities.index', 'geo-alt'],
                 ['Banners', 'admin.banners.index', 'image'],
+                ['Menus', 'admin.menus.index', 'list-nested'],
                 ['FAQs', 'admin.faqs.index', 'question-circle'],
                 ['Partners', 'admin.partners.index', 'handshake'],
                 ['Contact Messages', 'admin.contact-messages.index', 'envelope'],
