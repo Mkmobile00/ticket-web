@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Cinema;
 use App\Models\City;
 use App\Models\Event;
+use App\Models\Faq;
 use App\Models\Movie;
+use App\Models\Partner;
+use App\Models\Setting;
 use App\Models\Sport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -46,6 +49,9 @@ class DesignController extends Controller
         $data = $this->catalog();
         if ($page === 'movie') {
             $data = array_merge($data, $this->movieDetail($request->query('m')));
+        }
+        if ($page === 'event') {
+            $data = array_merge($data, $this->eventDetail($request->query('e')));
         }
 
         $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -213,6 +219,74 @@ class DesignController extends Controller
         if ($cast) $out['cast'] = $cast;
         if ($crew) $out['crew'] = $crew;
         return $out;
+    }
+
+    /**
+     * Per-event detail for the event page (mirrors movieDetail()). Overrides the
+     * static window.BOLETO_DATA.eventInfo with real data: the countdown targets
+     * the event's actual date, the intro is its description, and speakers / stats
+     * come from the DB. Sections with no data are returned empty so the page can
+     * hide them instead of showing placeholders.
+     */
+    private function eventDetail(?string $slug): array
+    {
+        $base = fn () => Event::with(['speakers', 'stats', 'city']);
+        // No slug (direct /event visit) -> first upcoming event, matching the
+        // client-side getEvent() fallback to D.events[0].
+        $event = $slug
+            ? ($base()->where('slug', $slug)->first() ?: $base()->get()->first(fn ($e) => Str::slug($e->title) === $slug))
+            : $base()->orderBy('event_date')->first();
+        if (!$event) return [];
+
+        $date  = $event->event_date instanceof Carbon ? $event->event_date
+            : ($event->event_date ? Carbon::parse($event->event_date) : null);
+        $start = $event->start_time ? Carbon::parse($event->start_time) : null;
+        $countdown = $date
+            ? $date->copy()->setTimeFrom($start ?: Carbon::createFromTime(9, 0))->format('Y-m-d\TH:i:s')
+            : null;
+
+        // Intro paragraphs from the description (split on blank lines).
+        $intro = collect(preg_split('/\R{2,}/', trim((string) $event->description)))
+            ->map(fn ($p) => trim($p))->filter()->values()->all();
+
+        $speakers = $event->speakers->map(fn ($s) => [
+            'name'  => $s->name,
+            'role'  => $s->designation ?: 'Speaker',
+            'photo' => $this->img($s->photo),
+            'about' => (string) $s->about,
+        ])->all();
+
+        $statIcons = ['ticket', 'cal', 'mic', 'star', 'users'];
+        $stats = $event->stats->values()->map(fn ($s, $i) => [
+            'ico' => $statIcons[$i % count($statIcons)],
+            'n'   => (string) $s->value,
+            'l'   => (string) $s->label,
+        ])->all();
+
+        $faq = Faq::where('is_active', true)->orderBy('order')->take(6)->get()
+            ->map(fn ($f) => ['q' => $f->question, 'a' => $f->answer])->all();
+
+        $sponsors = Partner::where('is_active', true)->orderBy('name')->pluck('name')->all();
+
+        $email = optional(Setting::where('key', 'contact_email')->first())->value
+            ?: (config('mail.from.address') ?: 'hello@boleto.com');
+
+        return ['eventInfo' => [
+            'countdownTo' => $countdown ?: '',
+            'dateLabel'   => $date ? $date->format('D, d M Y') : 'Date to be announced',
+            'timeLabel'   => $start ? $start->format('g:i A') . ' onwards' : 'Doors open soon',
+            'venue'       => $event->address ?: ($event->city->name ?? ''),
+            'organizer'   => (string) $event->organizer,
+            'email'       => $email,
+            'ready'       => 'Are you ready to attend?',
+            'intro'       => $intro ?: ['More details about this event will be announced soon.'],
+            'galleryCount' => 0, // no per-event gallery in the DB — hide the gallery strip
+            'speakers'    => $speakers,
+            'stats'       => $stats,
+            'faq'         => $faq,
+            'sponsorTabs' => $sponsors ? ['Partners & Sponsors'] : [],
+            'sponsors'    => $sponsors,
+        ]];
     }
 
     private function events(?int $cityId = null, ?string $q = null): array

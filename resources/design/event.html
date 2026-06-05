@@ -1569,7 +1569,7 @@ function EventPage() {
             {sport ? (
               <div className="ev-meta-item"><span className="mi-ico"><Icon n="cal" s={18} /></span><div><b>Thu, {ev.mon} {ev.day} 2026</b><span>Kick-off {ev.time || "19:00"}</span></div></div>
             ) : (
-              <div className="ev-meta-item"><span className="mi-ico"><Icon n="cal" s={18} /></span><div><b>{info.duration}</b><span>{info.workshops}</span></div></div>
+              <div className="ev-meta-item"><span className="mi-ico"><Icon n="cal" s={18} /></span><div><b>{info.dateLabel}</b><span>{info.timeLabel}</span></div></div>
             )}
             <div className="ev-meta-item"><span className="mi-ico"><Icon n="pin" s={18} /></span><div><b>{ev.addr2 || ev.venue || ev.addr1}</b><span>{ev.addr2 ? ev.addr1 : (ev.venue || "")}</span></div></div>
             <div className="ev-meta-item"><span className="mi-ico"><Icon n="mail" s={18} /></span><div><b>Drop us a line</b><span>{info.email}</span></div></div>
@@ -1591,8 +1591,8 @@ function EventPage() {
         </div>
       </section>
 
-      {!sport && <>
-        {/* gallery */}
+      {!sport && info.galleryCount > 0 && (
+        /* gallery */
         <div className="wrap">
           <div className="ev-gallery">
             {Array.from({ length: info.galleryCount }).map((_, i) => (
@@ -1600,19 +1600,20 @@ function EventPage() {
             ))}
           </div>
         </div>
+      )}
 
-        {/* speakers */}
+      {!sport && info.speakers.length > 0 && (
+        /* speakers */
         <section className="ev-sec tinted">
           <div className="wrap">
             <div className="ev-sec-head">
               <div className="ev-kicker">Listen to the</div>
               <h2>Event Speakers</h2>
-              <p>BOLETO is committed to making participation in the event a harassment-free experience for everyone, regardless of level of experience, gender, or gender identity and expression.</p>
             </div>
             <div className="spk-grid">
               {info.speakers.slice(0, 4).map(s => (
                 <div className="spk" key={s.name}>
-                  <div className="spk-av"><img src={img(s.name, 240, 240)} alt={s.name} loading="lazy" /></div>
+                  <div className="spk-av"><img src={s.photo || img(s.name, 240, 240)} alt={s.name} loading="lazy" /></div>
                   <div className="spk-name">{s.name}</div>
                   <div className="spk-role">{s.role}</div>
                 </div>
@@ -1621,62 +1622,66 @@ function EventPage() {
             <div className="spk-nav"><button onClick={() => flash("Previous speakers")}><Icon n="left" s={18} /></button><button onClick={() => flash("More speakers")}><Icon n="right" s={18} /></button></div>
           </div>
         </section>
-      </>}
+      )}
 
       {/* statistics */}
-      <section className="ev-stats">
-        <div className="ev-stats-bg" />
-        <div className="wrap ev-stats-in">
-          <div className="ev-kicker">What we have done</div>
-          <h2>Our Recent Statistics</h2>
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor ut labore et dolore magna aliqua.</p>
-          <div className="stat-row">
-            {info.stats.map(s => (
-              <div className="stat-cell" key={s.l}>
-                <span className="sc-ico"><Icon n={s.ico} s={24} /></span>
-                <div style={{ textAlign: "left" }}><b>{s.n}</b><span>{s.l}</span></div>
-              </div>
-            ))}
+      {info.stats.length > 0 && (
+        <section className="ev-stats">
+          <div className="ev-stats-bg" />
+          <div className="wrap ev-stats-in">
+            <div className="ev-kicker">What we have done</div>
+            <h2>Our Recent Statistics</h2>
+            <div className="stat-row">
+              {info.stats.map(s => (
+                <div className="stat-cell" key={s.l}>
+                  <span className="sc-ico"><Icon n={s.ico} s={24} /></span>
+                  <div style={{ textAlign: "left" }}><b>{s.n}</b><span>{s.l}</span></div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* FAQ */}
-      <section className="ev-sec">
-        <div className="wrap">
-          <div className="ev-sec-head">
-            <div className="ev-kicker">How can we help?</div>
-            <h2>Frequently Asked Questions</h2>
-          </div>
-          <div className="faq-list">
-            {info.faq.map((f, i) => (
-              <div className={"faq-item" + (faqOpen === i ? " open" : "")} key={i}>
-                <div className="faq-q" onClick={() => setFaqOpen(faqOpen === i ? -1 : i)}>
-                  {f.q}<span className="fq-tog"><Icon n={faqOpen === i ? "minus" : "plus"} s={16} /></span>
+      {info.faq.length > 0 && (
+        <section className="ev-sec">
+          <div className="wrap">
+            <div className="ev-sec-head">
+              <div className="ev-kicker">How can we help?</div>
+              <h2>Frequently Asked Questions</h2>
+            </div>
+            <div className="faq-list">
+              {info.faq.map((f, i) => (
+                <div className={"faq-item" + (faqOpen === i ? " open" : "")} key={i}>
+                  <div className="faq-q" onClick={() => setFaqOpen(faqOpen === i ? -1 : i)}>
+                    {f.q}<span className="fq-tog"><Icon n={faqOpen === i ? "minus" : "plus"} s={16} /></span>
+                  </div>
+                  <div className="faq-a"><div className="faq-a-inner">{f.a}</div></div>
                 </div>
-                <div className="faq-a"><div className="faq-a-inner">{f.a}</div></div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* sponsors */}
-      <section className="ev-sec tinted">
-        <div className="wrap">
-          <div className="ev-sec-head">
-            <div className="ev-kicker">Event Sponsors</div>
-            <h2>Partners & Sponsors</h2>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor ut labore et dolore magna aliqua.</p>
+      {info.sponsors.length > 0 && (
+        <section className="ev-sec tinted">
+          <div className="wrap">
+            <div className="ev-sec-head">
+              <div className="ev-kicker">Event Sponsors</div>
+              <h2>Partners & Sponsors</h2>
+            </div>
+            <div className="spon-tabs">
+              {info.sponsorTabs.map((t, i) => <button key={t} className={"spon-tab" + (sponTab === i ? " on" : "")} onClick={() => setSponTab(i)}>{t}</button>)}
+            </div>
+            <div className="spon-grid">
+              {info.sponsors.map(s => <div className="spon" key={s}>{s}</div>)}
+            </div>
           </div>
-          <div className="spon-tabs">
-            {info.sponsorTabs.map((t, i) => <button key={t} className={"spon-tab" + (sponTab === i ? " on" : "")} onClick={() => setSponTab(i)}>{t}</button>)}
-          </div>
-          <div className="spon-grid">
-            {info.sponsors.map(s => <div className="spon" key={s}>{s}</div>)}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
     </PageShell>
   );
 }
