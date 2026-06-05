@@ -27,7 +27,7 @@ class DesignController extends Controller
     private const PAGES = [
         'index.html', 'movie.html', 'showtimes.html', 'seats.html', 'checkout.html',
         'event.html', 'event-seats.html', 'event-checkout.html',
-        'sign-in.html', 'account.html', 'search.html', 'list.html', 'blog.html',
+        'sign-in.html', 'account.html', 'search.html', 'list.html', 'blog.html', 'about.html',
     ];
 
     /** Accent tint pairs reused when the DB has no per-item colour. */
@@ -55,6 +55,47 @@ class DesignController extends Controller
     public function blogIndex(Request $request)
     {
         return $this->serve('blog', array_merge($this->catalog(), ['blogPosts' => $this->blogList()]));
+    }
+
+    /** About page (BOLETO design, content from admin → Settings). */
+    public function about(Request $request)
+    {
+        $partners = Partner::where('is_active', true)->orderBy('name')->get()
+            ->map(fn ($p) => ['name' => $p->name, 'logo' => $this->img($p->logo), 'url' => (string) $p->url])->all();
+        $faqs = Faq::where('is_active', true)->orderBy('order')->take(8)->get()
+            ->map(fn ($f) => ['q' => $f->question, 'a' => $f->answer])->all();
+
+        return $this->serve('about', array_merge($this->catalog(), [
+            'about'    => $this->aboutData(),
+            'partners' => $partners,
+            'faqs'     => $faqs,
+        ]));
+    }
+
+    /** Build the About content object from settings (admin-editable). */
+    private function aboutData(): array
+    {
+        $s = Setting::whereIn('key', [
+            'about_hero_title', 'about_hero_subtitle', 'about_story_title', 'about_story_body',
+            'about_story_image', 'about_philosophy_title', 'about_philosophy_body', 'about_values', 'about_stats',
+        ])->pluck('value', 'key');
+
+        $lines = fn (?string $v) => collect(preg_split('/\R/', (string) $v))->map(fn ($x) => trim($x))->filter()->values();
+
+        return [
+            'heroTitle'       => (string) ($s['about_hero_title'] ?? 'About Us'),
+            'heroSubtitle'    => (string) ($s['about_hero_subtitle'] ?? ''),
+            'storyTitle'      => (string) ($s['about_story_title'] ?? 'Get to know us'),
+            'storyBody'       => $lines($s['about_story_body'] ?? '')->all(), // paragraphs
+            'storyImage'      => $this->img($s['about_story_image'] ?? null),
+            'philosophyTitle' => (string) ($s['about_philosophy_title'] ?? 'Our Philosophy'),
+            'philosophyBody'  => (string) ($s['about_philosophy_body'] ?? ''),
+            'values'          => $lines($s['about_values'] ?? '')->all(),
+            'stats'           => $lines($s['about_stats'] ?? '')->map(function ($l) {
+                $p = explode('|', $l, 2);
+                return ['num' => trim($p[0] ?? ''), 'label' => trim($p[1] ?? '')];
+            })->all(),
+        ];
     }
 
     /** Blog detail (BOLETO design). */

@@ -110,7 +110,8 @@ Route::get('/blog/{post:slug}', [\App\Http\Controllers\DesignController::class, 
 Route::post('/blog/{post:slug}/comment', [BlogController::class, 'storeComment'])->name('blog.comment')->middleware('throttle:public-form');
 
 // Static pages
-Route::get('/about', [PageController::class, 'about'])->name('about');
+// About — BOLETO design, content from admin → Settings.
+Route::get('/about', [\App\Http\Controllers\DesignController::class, 'about'])->name('about');
 Route::get('/apps', [PageController::class, 'apps'])->name('apps');
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store')->middleware('throttle:public-form');
