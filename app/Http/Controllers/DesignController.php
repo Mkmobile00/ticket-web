@@ -27,7 +27,7 @@ class DesignController extends Controller
     private const PAGES = [
         'index.html', 'movie.html', 'showtimes.html', 'seats.html', 'checkout.html',
         'event.html', 'event-seats.html', 'event-checkout.html',
-        'sign-in.html', 'account.html', 'search.html', 'list.html', 'blog.html', 'about.html',
+        'sign-in.html', 'account.html', 'search.html', 'list.html', 'blog.html', 'about.html', 'contact.html',
     ];
 
     /** Accent tint pairs reused when the DB has no per-item colour. */
@@ -55,6 +55,43 @@ class DesignController extends Controller
     public function blogIndex(Request $request)
     {
         return $this->serve('blog', array_merge($this->catalog(), ['blogPosts' => $this->blogList()]));
+    }
+
+    /** Contact page (BOLETO design, info from admin → Settings). */
+    public function contact(Request $request)
+    {
+        return $this->serve('contact', array_merge($this->catalog(), ['contact' => $this->contactData()]));
+    }
+
+    /** POST /design-api/contact — store a contact message (admin → Contact Messages). */
+    public function contactSubmit(Request $request)
+    {
+        $data = $request->validate([
+            'name'    => 'required|string|max:120',
+            'email'   => 'required|email|max:160',
+            'subject' => 'nullable|string|max:200',
+            'message' => 'required|string|max:5000',
+        ]);
+        \App\Models\ContactMessage::create($data);
+
+        return response()->json(['message' => 'Thanks — your message has been sent.']);
+    }
+
+    /** Contact info from settings. */
+    private function contactData(): array
+    {
+        $s = Setting::whereIn('key', [
+            'contact_heading', 'contact_intro', 'contact_address', 'contact_phone', 'contact_email', 'contact_hours',
+        ])->pluck('value', 'key');
+
+        return [
+            'heading' => (string) ($s['contact_heading'] ?? 'Get in touch'),
+            'intro'   => (string) ($s['contact_intro'] ?? ''),
+            'address' => (string) ($s['contact_address'] ?? ''),
+            'phone'   => (string) ($s['contact_phone'] ?? ''),
+            'email'   => (string) ($s['contact_email'] ?? ''),
+            'hours'   => (string) ($s['contact_hours'] ?? ''),
+        ];
     }
 
     /** About page (BOLETO design, content from admin → Settings). */

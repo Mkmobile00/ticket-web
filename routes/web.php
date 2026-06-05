@@ -113,8 +113,10 @@ Route::post('/blog/{post:slug}/comment', [BlogController::class, 'storeComment']
 // About — BOLETO design, content from admin → Settings.
 Route::get('/about', [\App\Http\Controllers\DesignController::class, 'about'])->name('about');
 Route::get('/apps', [PageController::class, 'apps'])->name('apps');
-Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+// Contact — BOLETO design; the form posts to /design-api/contact (Origin-checked).
+Route::get('/contact', [\App\Http\Controllers\DesignController::class, 'contact'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store')->middleware('throttle:public-form');
+Route::post('/design-api/contact', [\App\Http\Controllers\DesignController::class, 'contactSubmit'])->middleware('throttle:public-form');
 Route::get('/popcorn', [PopcornController::class, 'index'])->name('popcorn');
 
 // Newsletter
