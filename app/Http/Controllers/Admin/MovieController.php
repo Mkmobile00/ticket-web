@@ -2,17 +2,52 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\CastMember;
 use App\Models\Cinema;
+use App\Models\Format;
+use App\Models\Genre;
+use App\Models\Language;
 use App\Models\Movie;
 use App\Models\Screen;
 use App\Models\Showtime;
 use App\Models\TicketClass;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
 class MovieController extends AdminController
 {
     protected string $modelClass = \App\Models\Movie::class;
     protected string $resource = 'movie';
+
+    /** Relations editable on the movie form: [name, label, model]. */
+    private const M2M = [
+        ['genres', 'Genres', Genre::class],
+        ['languages', 'Languages', Language::class],
+        ['formats', 'Formats', Format::class],
+    ];
+
+    /** Add genre/language/format multi-selects to the auto-generated form. */
+    protected function fields(?Model $item = null): array
+    {
+        $fields = parent::fields();
+        foreach (self::M2M as [$key, $label, $cls]) {
+            $fields[] = [
+                'name' => $key,
+                'label' => $label,
+                'type' => 'multiselect',
+                'options' => $cls::orderBy('name')->pluck('name', 'id')->all(),
+                'selected' => ($item && $item->exists) ? $item->{$key}->pluck('id')->all() : [],
+            ];
+        }
+        return $fields;
+    }
+
+    private function syncM2M(Request $request, Movie $movie): void
+    {
+        foreach (self::M2M as [$key]) {
+            $movie->{$key}()->sync(array_map('intval', (array) $request->input($key, [])));
+        }
+    }
 
     /**
      * Drill-down for one movie: Cinemas → Screens → Showtimes → Ticket classes,
@@ -96,8 +131,9 @@ class MovieController extends AdminController
     public function store(Request $request)
     {
         $data = $request->validate($this->rules());
-        ($this->modelClass)::create($data);
-        return redirect()->route('admin.' . \Illuminate\Support\Str::plural($this->resource) . '.index')->with('status', 'Created.');
+        $movie = Movie::create($data);
+        $this->syncM2M($request, $movie);
+        return redirect()->route('admin.movies.index')->with('status', 'Created.');
     }
 
     public function show($id)
@@ -112,7 +148,7 @@ class MovieController extends AdminController
         return view('admin.crud.form', [
             'item' => $item,
             'resource' => $this->resource,
-            'fields' => $this->fields(),
+            'fields' => $this->fields($item),
             'title' => 'Edit ' . ucwords(str_replace('-', ' ', $this->resource)),
         ]);
     }
@@ -122,13 +158,49 @@ class MovieController extends AdminController
         $item = ($this->modelClass)::findOrFail($id);
         $data = $request->validate($this->rules($item));
         $item->update($data);
-        return redirect()->route('admin.' . \Illuminate\Support\Str::plural($this->resource) . '.index')->with('status', 'Updated.');
+        $this->syncM2M($request, $item);
+        return redirect()->route('admin.movies.index')->with('status', 'Updated.');
     }
 
     public function destroy($id)
     {
         ($this->modelClass)::findOrFail($id)->delete();
         return back()->with('status', 'Deleted.');
+    }
+
+    /** GET movies/{movie}/cast — manage this movie's cast & crew. */
+    public function cast($movie)
+    {
+        $movie = Movie::with(['cast' => fn ($q) => $q->orderByPivot('order')])->findOrFail($movie);
+        $all = CastMember::orderBy('name')->get(['id', 'name']);
+        return view('admin.movies.cast', compact('movie', 'all'));
+    }
+
+    /** POST movies/{movie}/cast — attach (or update) a cast/crew member. */
+    public function attachCast(Request $request, $movie)
+    {
+        $movie = Movie::findOrFail($movie);
+        $data = $request->validate([
+            'cast_member_id' => 'required|exists:cast_members,id',
+            'role'           => 'required|string|max:40',
+            'character_name' => 'nullable|string|max:120',
+            'order'          => 'nullable|integer|min:0|max:999',
+        ]);
+        $movie->cast()->syncWithoutDetaching([
+            $data['cast_member_id'] => [
+                'role'           => strtolower($data['role']),
+                'character_name' => $data['character_name'] ?: null,
+                'order'          => $data['order'] ?? 0,
+            ],
+        ]);
+        return back()->with('status', 'Cast/crew member added.');
+    }
+
+    /** DELETE movies/{movie}/cast/{castMember} — remove from this movie. */
+    public function detachCast($movie, $castMember)
+    {
+        Movie::findOrFail($movie)->cast()->detach($castMember);
+        return back()->with('status', 'Removed from this movie.');
     }
 }
 

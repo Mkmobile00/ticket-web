@@ -7,18 +7,20 @@
     <title>Admin Login &middot; {{ config('app.name', 'Boleto') }}</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         :root {
-            --accent: #ff5046;
-            --accent-2: #ff8a3d;
+            --accent: #0fb39a;
+            --accent-2: #0a8f7c;
             --ink: #1f2329;
         }
         body {
             margin: 0;
             min-height: 100vh;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: #0d0f12;
+            font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #0a0f0e;
             color: #e9ecf1;
             display: flex;
         }
@@ -33,15 +35,15 @@
             flex-direction: column;
             justify-content: space-between;
             padding: 48px 56px;
-            background: linear-gradient(135deg, #2a1336 0%, #3a1d52 35%, #7b1f4b 70%, #ff5046 130%);
+            background: linear-gradient(135deg, #0a1f1b 0%, #0f3b33 38%, #0a8f7c 88%, #0fb39a 130%);
         }
         .brand-panel::before {
             content: "";
             position: absolute;
             inset: 0;
             background:
-                radial-gradient(circle at 80% 20%, rgba(255,138,61,.35), transparent 45%),
-                radial-gradient(circle at 15% 85%, rgba(120,40,200,.4), transparent 40%);
+                radial-gradient(circle at 80% 20%, rgba(15,179,154,.40), transparent 45%),
+                radial-gradient(circle at 15% 85%, rgba(20,120,90,.45), transparent 40%);
             animation: drift 14s ease-in-out infinite alternate;
         }
         @keyframes drift {
@@ -101,7 +103,7 @@
         .field input:focus {
             outline: none;
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(255,80,70,.18);
+            box-shadow: 0 0 0 3px rgba(15,179,154,.20);
         }
         .toggle-pass { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); left: auto; cursor: pointer; color: #6b7280; background: none; border: 0; }
         .row-between { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; font-size: .85rem; }
@@ -115,14 +117,14 @@
             border-radius: 11px;
             padding: 14px;
             font-size: 1rem;
-            font-weight: 700;
-            color: #fff;
+            font-weight: 800;
+            color: #04201b;
             cursor: pointer;
             background: linear-gradient(135deg, var(--accent), var(--accent-2));
-            box-shadow: 0 8px 22px rgba(255,80,70,.35);
+            box-shadow: 0 8px 22px rgba(15,179,154,.38);
             transition: transform .12s, box-shadow .12s;
         }
-        .btn-login:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(255,80,70,.45); }
+        .btn-login:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(15,179,154,.5); }
         .btn-login:active { transform: translateY(0); }
 
         .back-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 26px; color: #8b94a1; font-size: .86rem; text-decoration: none; }

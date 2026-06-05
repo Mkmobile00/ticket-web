@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Search — BOLETO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+
+/* ===== styles.css ===== */
+/* ============================================================
+   BOLETO — homepage (mirrors the original BOLETO layout)
+   Light & professional, with a .dark theme class.
+   ============================================================ */
+
+:root {
+  --accent: #0fb39a;
+  --accent-d: #0a8f7c;
+  --accent-l: #e6f7f3;
+
+  --bg: #f5f7f9;
+  --surface: #ffffff;
+  --ink: #16202e;
+  --ink-2: #46535f;
+  --ink-3: #8a95a3;
+  --line: #e7eaee;
+  --line-2: #eef1f4;
+
+  --head: #111d2b;
+  --head-2: #1a2838;
+  --head-ink: #f4f7fa;
+  --head-ink-2: #9fadbd;
+
+  --star: #f5a623;
+  --pop: #ef7a32;
+  --radius: 14px;
+  --shadow-card: 0 1px 2px rgba(20,32,46,.06), 0 8px 22px rgba(20,32,46,.08);
+  --shadow-pop: 0 18px 50px rgba(20,32,46,.22);
+  --maxw: 1200px;
+  --gut: clamp(16px, 4vw, 40px);
+  --font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.dark {
+  --bg: #0c1826;
+  --surface: #12223a;
+  --ink: #eaf1f8;
+  --ink-2: #aebccd;
+  --ink-3: #7c8aa0;
+  --line: rgba(255,255,255,.09);
+  --line-2: rgba(255,255,255,.06);
+  --shadow-card: 0 1px 2px rgba(0,0,0,.3), 0 10px 26px rgba(0,0,0,.35);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+.app { background: var(--bg); min-height: 100vh; transition: background .25s; }
+img { display: block; max-width: 100%; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+a { color: inherit; text-decoration: none; }
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-thumb { background: rgba(120,130,145,.4); border-radius: 9px; }
+.no-scroll { overflow: hidden; }
+.wrap { max-width: var(--maxw); margin: 0 auto; padding-inline: var(--gut); }
+
+/* ============================================================ HEADER */
+.hdr { position: sticky; top: 0; z-index: 60; background: var(--head); color: var(--head-ink); box-shadow: 0 2px 18px rgba(0,0,0,.18); }
+.hdr-in { display: flex; align-items: center; gap: 26px; height: 70px; }
+.logo { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 21px; letter-spacing: .3px; flex-shrink: 0; }
+.logo-mark { width: 36px; height: 36px; border-radius: 9px; background: linear-gradient(135deg, var(--accent), var(--accent-d)); display: grid; place-items: center; color: #fff; box-shadow: 0 4px 14px rgba(15,179,154,.45); flex-shrink: 0; }
+.logo b { color: #fff; } .logo span { color: var(--accent); }
+
+.nav { display: flex; align-items: center; gap: 22px; margin-left: 6px; }
+.nav-item { position: relative; }
+.nav-link { display: flex; align-items: center; gap: 5px; font-size: 14px; font-weight: 700; color: var(--head-ink); padding: 24px 0; letter-spacing: .2px; white-space: nowrap; }
+.nav-link:hover, .nav-link.on { color: var(--accent); }
+.nav-link.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: 16px; height: 3px; background: var(--accent); border-radius: 3px; }
+.nav-link .chev { transition: transform .2s; }
+.nav-item:hover .chev { transform: rotate(180deg); }
+.nav-drop { position: absolute; top: 100%; left: -14px; min-width: 184px; background: #fff; color: #16202e; border-radius: 10px; box-shadow: var(--shadow-pop); padding: 6px; opacity: 0; visibility: hidden; transform: translateY(6px); transition: .16s; z-index: 70; }
+.nav-item:hover .nav-drop { opacity: 1; visibility: visible; transform: translateY(0); }
+.nav-drop a { display: block; padding: 9px 13px; border-radius: 7px; font-size: 13.5px; font-weight: 600; }
+.nav-drop a:hover { background: var(--accent-l); color: var(--accent-d); }
+
+.hdr-right { margin-left: auto; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.city { display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 700; color: var(--head-ink); white-space: nowrap; }
+.city:hover { color: var(--accent); } .city svg { color: var(--accent); }
+.city .pin { color: var(--accent); }
+.btn-join { background: linear-gradient(135deg, var(--accent), var(--accent-d)); color: #04201b; font-weight: 800; font-size: 13.5px; padding: 11px 22px; border-radius: 22px; letter-spacing: .4px; box-shadow: 0 6px 16px rgba(15,179,154,.4); }
+.btn-join:hover { filter: brightness(1.06); transform: translateY(-1px); }
+.hdr-burger { display: none; color: #fff; margin-left: auto; }
+
+/* ============================================================ HERO */
+.hero { position: relative; padding: clamp(48px, 9vw, 96px) 0 130px; overflow: hidden; color: #fff; text-align: center; }
+.hero-bg { position: absolute; inset: 0; z-index: 0; }
+.hero-bg img { width: 100%; height: 100%; object-fit: cover; }
+.hero-veil { position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(10,18,28,.78), rgba(10,18,28,.62) 40%, rgba(10,18,28,.9)); }
+.hero-in { position: relative; z-index: 2; }
+.hero h1 { font-size: clamp(34px, 6.4vw, 70px); font-weight: 800; line-height: 1.02; letter-spacing: -1px; margin: 0; text-shadow: 0 4px 30px rgba(0,0,0,.5); }
+.hero h1 .rot { color: var(--accent); position: relative; }
+.hero h1 .rot::after { content: ""; display: inline-block; width: 3px; height: .9em; background: var(--accent); margin-left: 4px; vertical-align: -2px; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.hero p { font-size: clamp(14px, 1.7vw, 19px); opacity: .92; margin: 18px auto 0; max-width: 54ch; }
+
+/* search panel (overlaps hero) */
+.searchp { position: relative; z-index: 5; margin-top: -86px; }
+.searchp-card { background: linear-gradient(120deg, #233a6e, #2b2a72 55%, #5a2f8e); border-radius: 18px; padding: clamp(20px, 3vw, 30px); box-shadow: 0 24px 60px rgba(20,20,60,.4); color: #fff; }
+.sp-top { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; margin-bottom: 20px; }
+.sp-kicker { font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+.sp-title { font-size: clamp(20px, 2.6vw, 28px); font-weight: 800; margin-top: 4px; }
+.sp-tabs { display: flex; gap: 10px; }
+.sp-tab { display: flex; align-items: center; gap: 8px; padding: 11px 20px; border-radius: 24px; font-size: 13.5px; font-weight: 700; background: rgba(255,255,255,.12); color: #fff; transition: .15s; }
+.sp-tab:hover { background: rgba(255,255,255,.2); }
+.sp-tab.on { background: linear-gradient(135deg, var(--accent), var(--accent-d)); color: #04201b; }
+.sp-tab i { width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,.25); display: grid; place-items: center; }
+.sp-tab.on i { background: rgba(0,0,0,.18); }
+
+.sp-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 12px; background: rgba(255,255,255,.1); border-radius: 12px; padding: 10px; }
+.sp-field { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.08); border-radius: 9px; padding: 0 14px; height: 50px; position: relative; }
+.sp-field svg { color: var(--accent); flex-shrink: 0; }
+.sp-field input { border: none; outline: none; background: transparent; color: #fff; font-size: 14px; font-family: inherit; width: 100%; }
+.sp-field input::placeholder { color: rgba(255,255,255,.65); }
+.sp-sel { display: flex; flex-direction: column; justify-content: center; flex: 1; min-width: 0; }
+.sp-sel small { font-size: 10.5px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,.6); font-weight: 700; }
+.sp-sel button { display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 700; color: #fff; }
+.sp-sel button .chev { margin-left: auto; }
+.sp-search-btn { background: linear-gradient(135deg, var(--accent), var(--accent-d)); color: #04201b; width: 42px; height: 38px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0; }
+.sp-menu { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: #fff; color: #16202e; border-radius: 9px; box-shadow: var(--shadow-pop); padding: 5px; z-index: 30; }
+.sp-menu button { display: block; width: 100%; text-align: left; padding: 9px 12px; border-radius: 6px; font-size: 13.5px; font-weight: 600; }
+.sp-menu button:hover { background: var(--accent-l); color: var(--accent-d); }
+
+/* ============================================================ SECTIONS */
+.section { padding: clamp(30px, 4vw, 50px) 0 0; }
+.sec-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+.sec-title { font-size: clamp(22px, 3vw, 32px); font-weight: 800; text-transform: uppercase; letter-spacing: -.2px; color: var(--ink); position: relative; padding-bottom: 12px; }
+.sec-title::after { content: ""; position: absolute; left: 0; bottom: 0; width: 56px; height: 3px; background: var(--accent); border-radius: 3px; }
+.see-all { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); font-weight: 700; font-size: 14px; }
+.see-all:hover { color: var(--accent-d); gap: 7px; }
+
+/* movies layout: sidebar + grid */
+.movies-grid { display: grid; grid-template-columns: 232px 1fr; gap: 28px; align-items: start; }
+.movies-main .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+/* sidebar */
+.side { display: flex; flex-direction: column; gap: 20px; position: sticky; top: 86px; }
+.promise { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 8px 14px; box-shadow: var(--shadow-card); }
+.promise-row { display: flex; align-items: center; gap: 12px; padding: 12px 2px; }
+.promise-row + .promise-row { border-top: 1px solid var(--line-2); }
+.promise-row .pico { width: 38px; height: 38px; border-radius: 10px; background: var(--accent-l); color: var(--accent-d); display: grid; place-items: center; flex-shrink: 0; }
+.dark .promise-row .pico { background: rgba(15,179,154,.16); }
+.promise-row b { font-size: 14px; font-weight: 700; color: var(--ink); }
+
+.ad { border-radius: 14px; overflow: hidden; position: relative; min-height: 150px; display: flex; flex-direction: column; justify-content: flex-end; padding: 16px; color: #fff; box-shadow: var(--shadow-card); }
+.ad img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+.ad .ad-veil { position: absolute; inset: 0; z-index: 1; }
+.ad > * { position: relative; z-index: 2; }
+.ad .ad-kicker { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; background: rgba(0,0,0,.35); align-self: flex-start; padding: 4px 9px; border-radius: 5px; }
+.ad .ad-title { font-size: 18px; font-weight: 800; line-height: 1.05; margin-top: 8px; text-shadow: 0 2px 10px rgba(0,0,0,.5); }
+.ad .ad-price { font-size: 22px; font-weight: 800; margin-top: 4px; }
+.ad .ad-note { font-size: 12px; opacity: .9; margin-top: 6px; }
+.ad .ad-cta { align-self: flex-start; margin-top: 12px; background: #fff; color: #14202e; font-weight: 800; font-size: 12.5px; padding: 8px 16px; border-radius: 7px; }
+.ad .ad-cta:hover { background: var(--accent); }
+
+.trend { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; box-shadow: var(--shadow-card); }
+.trend h4 { margin: 0 0 10px; font-size: 15px; font-weight: 800; color: var(--ink); }
+.trend a { display: block; padding: 9px 0; border-top: 1px solid var(--line-2); }
+.trend a:first-of-type { border-top: none; }
+.trend .tn { font-size: 13.5px; font-weight: 700; color: var(--ink); }
+.trend a:hover .tn { color: var(--accent-d); }
+.trend .tc { font-size: 11.5px; color: var(--ink-3); margin-top: 1px; }
+
+/* ============================================================ MOVIE CARD */
+.mcard { cursor: pointer; }
+.mcard:hover .m-poster { transform: translateY(-5px); box-shadow: var(--shadow-pop); }
+.m-poster { position: relative; aspect-ratio: 3/4; border-radius: 13px; overflow: hidden; box-shadow: var(--shadow-card); transition: transform .25s, box-shadow .25s; }
+.m-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.m-poster .m-tint { position: absolute; inset: 0; z-index: 1; }
+.m-poster .m-fade { position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(0,0,0,0) 38%, rgba(0,0,0,.82)); }
+.m-tag { position: absolute; top: 0; left: 0; z-index: 3; background: rgba(8,16,24,.62); backdrop-filter: blur(2px); padding: 6px 10px; border-radius: 0 0 9px 0; }
+.m-tag b { color: var(--accent); font-size: 10px; font-weight: 800; letter-spacing: .6px; display: block; }
+.m-tag span { color: #fff; font-size: 8.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; opacity: .85; }
+.m-ov { position: absolute; left: 13px; right: 13px; bottom: 13px; z-index: 3; color: #fff; }
+.m-ov-title { font-size: 21px; font-weight: 800; line-height: 1; letter-spacing: -.3px; text-transform: uppercase; text-shadow: 0 2px 12px rgba(0,0,0,.5); }
+.m-ov-gen { font-size: 11.5px; opacity: .9; margin-top: 6px; }
+.m-ov-rate { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; margin-top: 5px; }
+.m-ov-rate .star { color: var(--star); }
+.m-ov-rate .dot { opacity: .6; }
+.m-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 11px 3px 2px; }
+.m-foot-name { font-size: 15px; font-weight: 700; color: var(--ink); }
+.m-stats { display: flex; align-items: center; gap: 12px; }
+.m-stat { display: flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 800; }
+.m-stat.crit { color: var(--accent-d); }
+.m-stat.aud { color: var(--pop); }
+.m-stat .ring { width: 17px; height: 17px; border-radius: 50%; border: 2.5px solid currentColor; }
+
+/* ============================================================ EVENT / SPORT CARD */
+.grid3-e { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.ecard { cursor: pointer; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-card); transition: transform .25s, box-shadow .25s; }
+.ecard:hover { transform: translateY(-5px); box-shadow: var(--shadow-pop); }
+.e-img { position: relative; aspect-ratio: 16/11; }
+.e-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.e-img .e-tint { position: absolute; inset: 0; z-index: 1; }
+.e-date { position: absolute; top: 13px; left: 13px; z-index: 2; background: var(--accent); color: #04201b; border-radius: 11px; text-align: center; padding: 7px 11px; line-height: 1; box-shadow: 0 6px 16px rgba(15,179,154,.5); }
+.e-date b { display: block; font-size: 18px; font-weight: 800; }
+.e-date span { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; }
+.e-time { position: absolute; top: 13px; right: 13px; z-index: 2; background: rgba(8,16,24,.7); color: #fff; font-size: 12px; font-weight: 800; padding: 6px 11px; border-radius: 8px; }
+.e-body { padding: 16px 16px 18px; }
+.e-name { font-size: 17px; font-weight: 800; color: var(--ink); line-height: 1.2; }
+.e-meta { font-size: 13px; color: var(--ink-2); margin-top: 8px; display: flex; align-items: flex-start; gap: 6px; line-height: 1.4; }
+.e-meta svg { color: var(--accent); flex-shrink: 0; margin-top: 2px; }
+.e-price { font-size: 13px; color: var(--accent-d); font-weight: 800; margin-top: 12px; }
+
+/* ============================================================ SUBSCRIBE */
+.subscribe { position: relative; overflow: hidden; margin: clamp(40px,6vw,70px) 0 0; border-radius: 20px; padding: clamp(38px, 6vw, 64px) 24px; text-align: center; color: #fff; background: linear-gradient(120deg, #2b2a72, #4a2f8e 55%, #2f6f8e); box-shadow: 0 22px 54px rgba(40,30,90,.32); }
+.sub-glow { position: absolute; inset: 0; z-index: 0; background: radial-gradient(46% 80% at 14% 8%, rgba(255,255,255,.18), transparent 60%), radial-gradient(46% 80% at 86% 92%, rgba(15,179,154,.4), transparent 62%); }
+.subscribe > * { position: relative; z-index: 1; }
+.sub-kicker { font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+.sub-h { font-size: clamp(22px, 3.6vw, 36px); font-weight: 800; text-transform: uppercase; margin: 8px 0 22px; }
+.sub-form { display: flex; gap: 10px; max-width: 520px; margin: 0 auto; background: rgba(255,255,255,.14); padding: 7px; border-radius: 12px; }
+.sub-form input { flex: 1; min-width: 0; border: none; outline: none; background: #fff; border-radius: 8px; padding: 13px 18px; font-size: 14.5px; font-family: inherit; color: #16202e; }
+.sub-form button { background: linear-gradient(135deg, var(--accent), var(--accent-d)); color: #04201b; font-weight: 800; padding: 0 26px; border-radius: 8px; font-size: 14.5px; white-space: nowrap; }
+.sub-form button:hover { filter: brightness(1.07); }
+.sub-note { font-size: 13px; opacity: .9; margin: 16px 0 0; }
+
+/* ============================================================ FOOTER */
+.foot { background: var(--head); color: var(--head-ink-2); margin-top: clamp(36px,5vw,56px); padding: 40px 0 26px; }
+.foot-in { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; padding-bottom: 26px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.foot-social { display: flex; gap: 10px; }
+.foot-social a { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,.08); display: grid; place-items: center; color: #fff; }
+.foot-social a:hover { background: var(--accent); color: #04201b; }
+.foot-bottom { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-top: 22px; font-size: 13px; }
+.foot-bottom .links { display: flex; gap: 22px; flex-wrap: wrap; }
+.foot-bottom a:hover { color: var(--accent); }
+.foot-bottom b { color: var(--accent); font-weight: 700; }
+
+/* ============================================================ CITY MODAL */
+.city-back { position: fixed; inset: 0; z-index: 250; background: rgba(8,14,22,.6); backdrop-filter: blur(3px); display: flex; justify-content: center; align-items: flex-start; padding: clamp(20px, 9vh, 110px) 20px 20px; animation: fade .2s; overflow-y: auto; }
+.city-modal { position: relative; background: var(--surface); color: var(--ink); width: min(960px, 100%); border-radius: 14px; box-shadow: var(--shadow-pop); padding: clamp(22px, 3vw, 34px); animation: citypop .25s cubic-bezier(.2,.8,.3,1.2); }
+@keyframes citypop { from { transform: translateY(16px) scale(.97); opacity: 0; } }
+.city-x { position: absolute; top: -46px; right: 0; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,.14); color: #fff; display: grid; place-items: center; }
+.city-x:hover { background: var(--accent); color: #04201b; }
+@media (max-width: 560px) { .city-x { top: 8px; right: 8px; background: var(--bg); color: var(--ink); } }
+.city-search { display: flex; align-items: center; gap: 12px; border: 1.5px solid var(--line); border-radius: 10px; padding: 0 16px; height: 56px; }
+.city-search:focus-within { border-color: var(--accent); }
+.city-search svg { color: var(--ink-3); flex-shrink: 0; }
+.city-search input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; color: var(--ink); font-size: 16px; font-family: inherit; }
+.city-search input::placeholder { color: var(--ink-3); }
+.city-detect { display: inline-flex; align-items: center; gap: 9px; color: var(--accent-d); font-weight: 700; font-size: 14.5px; padding: 16px 2px; border-bottom: 1px solid var(--line); width: 100%; }
+.city-detect:hover { color: var(--accent); }
+.city-pop-label { text-align: center; font-size: 15px; font-weight: 700; color: var(--ink); margin: 24px 0 20px; }
+.city-pop { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; }
+.city-pop-item { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 10px 4px; border-radius: 10px; color: var(--ink-2); transition: .15s; }
+.city-pop-item:hover { color: var(--accent-d); background: var(--accent-l); transform: translateY(-2px); }
+.dark .city-pop-item:hover { background: rgba(15,179,154,.12); }
+.city-pop-item.on { color: var(--accent-d); }
+.city-pop-item span { font-size: 13px; font-weight: 600; }
+.city-viewall { display: block; margin: 24px auto 4px; color: var(--accent-d); font-weight: 700; font-size: 14.5px; }
+.city-viewall:hover { color: var(--accent); }
+.city-results, .city-all { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; margin-top: 18px; }
+.city-all { max-height: 240px; overflow-y: auto; padding-top: 8px; border-top: 1px solid var(--line); }
+.city-result { text-align: left; padding: 11px 14px; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.city-result:hover { background: var(--accent-l); color: var(--accent-d); }
+.dark .city-result:hover { background: rgba(15,179,154,.12); }
+.city-result.on { color: var(--accent-d); font-weight: 800; }
+.city-empty { grid-column: 1 / -1; text-align: center; color: var(--ink-3); padding: 30px; font-size: 14px; }
+@media (max-width: 860px) { .city-pop { grid-template-columns: repeat(5, 1fr); row-gap: 16px; } }
+@media (max-width: 480px) { .city-pop { grid-template-columns: repeat(3, 1fr); } }
+
+/* scroll-top */
+.totop { position: fixed; right: 22px; bottom: 22px; z-index: 90; width: 44px; height: 44px; border-radius: 11px; background: var(--accent); color: #04201b; display: grid; place-items: center; box-shadow: 0 8px 22px rgba(15,179,154,.5); opacity: 0; pointer-events: none; transition: .25s; }
+.totop.show { opacity: 1; pointer-events: auto; }
+.totop:hover { background: var(--accent-d); color: #fff; }
+
+/* ============================================================ MODAL */
+.modal-back { position: fixed; inset: 0; z-index: 200; background: rgba(8,14,22,.66); backdrop-filter: blur(4px); display: grid; place-items: center; padding: 20px; animation: fade .2s; }
+@keyframes fade { from { opacity: 0; } }
+.modal { background: var(--surface); color: var(--ink); border-radius: 18px; width: min(840px, 100%); max-height: 90vh; overflow: hidden; display: grid; grid-template-columns: 290px 1fr; box-shadow: var(--shadow-pop); animation: pop .25s cubic-bezier(.2,.8,.3,1.2); }
+@keyframes pop { from { transform: translateY(16px) scale(.97); opacity: 0; } }
+.modal-poster { position: relative; }
+.modal-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.modal-poster .mp-fade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.1), rgba(0,0,0,.7)); }
+.modal-poster .mp-name { position: absolute; left: 18px; right: 18px; bottom: 18px; z-index: 2; color: #fff; font-weight: 800; font-size: 25px; text-shadow: 0 2px 14px rgba(0,0,0,.6); }
+.modal-body { padding: 26px 28px; overflow-y: auto; }
+.modal-close { position: absolute; top: 14px; right: 16px; z-index: 10; width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,.92); color: #14202e; display: grid; place-items: center; }
+.modal-close:hover { background: var(--accent); color: #fff; }
+.m-h { font-size: 22px; font-weight: 800; margin: 0 0 6px; }
+.m-rate { display: flex; align-items: center; gap: 7px; color: var(--ink-2); font-size: 13.5px; margin-bottom: 12px; }
+.m-rate .star { color: var(--star); }
+.m-tags { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.m-tag2 { font-size: 12px; font-weight: 600; color: var(--ink-2); background: var(--bg); border: 1px solid var(--line); padding: 5px 11px; border-radius: 20px; }
+.m-label { font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--ink-3); margin: 18px 0 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 9px; }
+.chip { padding: 9px 15px; border-radius: 9px; border: 1.5px solid var(--line); font-size: 13.5px; font-weight: 700; color: var(--ink); transition: .15s; }
+.chip:hover { border-color: var(--accent); color: var(--accent-d); }
+.chip.on { background: var(--accent); border-color: var(--accent); color: #04201b; }
+.m-foot2 { display: flex; align-items: center; gap: 14px; margin-top: 24px; }
+.m-price { font-size: 13.5px; color: var(--ink-2); } .m-price b { font-size: 21px; color: var(--ink); }
+.btn-book { margin-left: auto; background: linear-gradient(135deg, var(--accent), var(--accent-d)); color: #04201b; font-weight: 800; font-size: 15px; padding: 13px 30px; border-radius: 9px; }
+.btn-book:hover { filter: brightness(1.07); }
+.book-done { text-align: center; padding: 28px 10px; }
+.book-done .bd-ico { width: 64px; height: 64px; border-radius: 50%; background: var(--accent-l); color: var(--accent-d); display: grid; place-items: center; margin: 0 auto 16px; }
+.dark .book-done .bd-ico { background: rgba(15,179,154,.18); }
+
+/* toast */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 300; background: var(--head); color: #fff; padding: 13px 22px; border-radius: 10px; font-size: 14px; font-weight: 600; box-shadow: var(--shadow-pop); display: flex; align-items: center; gap: 10px; animation: pop .25s; }
+.toast .star { color: var(--accent); }
+
+/* ============================================================ RESPONSIVE */
+@media (max-width: 1040px) {
+  .movies-grid { grid-template-columns: 1fr; }
+  .side { position: static; flex-direction: row; flex-wrap: wrap; }
+  .side > * { flex: 1; min-width: 200px; }
+}
+@media (max-width: 900px) {
+  .nav { display: none; }
+  .hdr-burger { display: grid; place-items: center; }
+  .hdr-right { margin-left: 0; }
+  .sp-row { grid-template-columns: 1fr 1fr; }
+  .modal { grid-template-columns: 1fr; } .modal-poster { height: 170px; }
+}
+@media (max-width: 680px) {
+  .movies-main .grid3 { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .grid3-e { grid-template-columns: 1fr; }
+  .sp-row { grid-template-columns: 1fr; }
+  .sp-tabs { width: 100%; } .sp-tab { flex: 1; justify-content: center; }
+  .m-ov-title { font-size: 17px; }
+  .city .cityname { display: none; }
+  .sub-form { flex-wrap: wrap; } .sub-form button { width: 100%; padding: 13px; }
+}
+
+
+/* ===== pages.css ===== */
+/* ============================================================
+   BOLETO — booking-flow pages (detail / showtimes / seats / checkout)
+   Inherits tokens from styles.css
+   ============================================================ */
+
+/* inner hero banner */
+.pbanner { position: relative; overflow: hidden; min-height: 300px; display: grid; place-items: center; text-align: center; color: #fff; }
+.pbanner.tall { min-height: 380px; }
+.pbanner-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+.pbanner-veil { position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(12,20,32,.72), rgba(12,20,32,.55) 45%, rgba(12,20,32,.92)); }
+.pbanner-in { position: relative; z-index: 2; padding: 40px 0; }
+.pbanner-in h1 { font-size: clamp(36px, 6vw, 66px); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin: 0; text-shadow: 0 4px 26px rgba(0,0,0,.5); }
+.pbanner-sub { font-size: 14px; letter-spacing: 3px; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-top: 8px; }
+
+/* breadcrumb / step bar */
+.crumb { background: var(--surface); border-bottom: 1px solid var(--line); }
+.crumb-in { display: flex; align-items: center; gap: 10px; height: 56px; font-size: 13.5px; color: var(--ink-2); font-weight: 600; flex-wrap: wrap; }
+.crumb-in a { color: var(--ink-2); } .crumb-in a:hover { color: var(--accent-d); }
+.crumb-in .sep { color: var(--ink-3); }
+.crumb-in b { color: var(--ink); }
+
+/* ============================================================ MOVIE DETAIL */
+.detail-hero { position: relative; }
+.dh-band { position: relative; overflow: hidden; color: #fff; }
+.dh-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+.dh-veil { position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(12,20,32,.66), rgba(12,20,32,.86)); }
+.dh-in { position: relative; z-index: 2; display: grid; grid-template-columns: 260px 1fr; gap: 30px; padding: 40px 0 28px; align-items: end; }
+.dh-poster { width: 260px; aspect-ratio: 3/4; border-radius: 14px; overflow: hidden; position: relative; box-shadow: var(--shadow-pop); transform: translateY(40px); }
+.dh-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.dh-poster .m-tag { position: absolute; top: 0; left: 0; }
+.dh-poster .dp-fade { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(0,0,0,.8)); }
+.dh-poster .dp-name { position: absolute; left: 14px; bottom: 42px; right: 14px; font-weight: 800; font-size: 22px; text-transform: uppercase; }
+.dh-poster .dp-meta { position: absolute; left: 14px; bottom: 16px; font-size: 11.5px; opacity: .9; display: flex; gap: 8px; align-items: center; }
+.dh-info h1 { font-size: clamp(30px, 4.4vw, 48px); font-weight: 800; margin: 0; }
+.dh-lang { color: var(--accent); font-weight: 700; font-size: 14px; letter-spacing: 1px; margin-top: 4px; }
+.dh-tags { display: flex; gap: 10px; margin: 16px 0; flex-wrap: wrap; }
+.dh-tag { border: 1px solid rgba(255,255,255,.35); border-radius: 6px; padding: 7px 16px; font-size: 12.5px; font-weight: 700; letter-spacing: .5px; }
+.dh-meta { display: flex; align-items: center; gap: 22px; font-size: 13.5px; color: #d6dde6; flex-wrap: wrap; }
+.dh-meta span { display: flex; align-items: center; gap: 7px; } .dh-meta svg { color: var(--accent); }
+.dh-social { display: flex; gap: 12px; margin-top: 18px; } .dh-social a { color: #cfd6df; } .dh-social a:hover { color: var(--accent); }
+
+/* stats strip */
+.dstats { background: var(--surface); border-bottom: 1px solid var(--line); }
+.dstats-in { display: flex; align-items: center; gap: clamp(20px, 4vw, 50px); padding: 24px 0 24px 290px; flex-wrap: wrap; }
+.dstat { text-align: left; }
+.dstat .dv { display: flex; align-items: center; gap: 8px; font-size: 22px; font-weight: 800; color: var(--ink); }
+.dstat .dv .tomato { color: #e3433a; } .dstat .dv .pop { color: var(--pop); }
+.dstat .dl { font-size: 12px; color: var(--ink-3); margin-top: 3px; font-weight: 600; }
+.dstat .hearts { display: flex; gap: 3px; } .dstat .hearts .on { color: var(--accent); } .dstat .hearts .off { color: var(--line); }
+.dstat.rate .hearts .h { cursor: pointer; } .dstat.rate .hearts .h:hover { color: var(--accent); }
+.dbook { margin-left: auto; }
+.btn-cta { background: linear-gradient(135deg, var(--accent), var(--accent-d)); color: #04201b; font-weight: 800; font-size: 15px; padding: 15px 38px; border-radius: 28px; letter-spacing: .5px; box-shadow: 0 8px 22px rgba(15,179,154,.4); }
+.btn-cta:hover { filter: brightness(1.07); transform: translateY(-1px); }
+
+/* detail body */
+.detail-body { padding: 40px 0 0; }
+.detail-grid { display: grid; grid-template-columns: 260px 1fr; gap: 34px; align-items: start; }
+.dformats { display: flex; gap: 10px; margin-bottom: 24px; }
+.dformat { border: 1px solid var(--line); border-radius: 20px; padding: 8px 18px; font-size: 13px; font-weight: 700; color: var(--ink-2); cursor: pointer; }
+.dformat:hover, .dformat.on { border-color: var(--accent); color: var(--accent-d); background: var(--accent-l); }
+.dark .dformat:hover, .dark .dformat.on { background: rgba(15,179,154,.14); }
+.side-h { font-size: 20px; font-weight: 800; color: var(--ink); margin: 4px 0 16px; }
+.offer { border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; text-align: center; background: var(--surface); }
+.offer-ico { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 20px; margin: 0 auto 10px; }
+.offer-name { font-size: 14.5px; font-weight: 700; color: var(--ink); }
+.offer-note { font-size: 12.5px; color: var(--ink-2); margin-top: 6px; line-height: 1.5; }
+
+.photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.photo { aspect-ratio: 16/10; border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-card); }
+.photo img { width: 100%; height: 100%; object-fit: cover; transition: transform .35s; }
+.photo:hover img { transform: scale(1.06); }
+
+.tabs { display: flex; gap: 28px; border-bottom: 1px solid var(--line); margin: 36px 0 22px; }
+.tab { padding: 0 0 12px; font-size: 14px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--ink-3); cursor: pointer; position: relative; }
+.tab.on { color: var(--accent); } .tab.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; background: var(--accent); border-radius: 3px; }
+.syn-h { font-size: 20px; font-weight: 800; text-transform: uppercase; color: var(--ink); margin: 0 0 14px; }
+.syn-p { font-size: 15px; line-height: 1.75; color: var(--ink-2); max-width: 78ch; }
+
+.castrow { display: flex; align-items: center; justify-content: space-between; margin: 38px 0 18px; }
+.castrow h3 { font-size: 20px; font-weight: 800; text-transform: uppercase; color: var(--ink); margin: 0; }
+.cast-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.person { text-align: center; }
+.person .av { width: 104px; height: 104px; border-radius: 50%; margin: 0 auto 12px; padding: 4px; border: 2px solid var(--accent); }
+.person .av img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.person .pn { font-size: 15px; font-weight: 800; color: var(--ink); }
+.person .pr { font-size: 12.5px; color: var(--accent-d); font-weight: 700; margin-top: 4px; }
+.person .pa { font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+.arrows { display: flex; gap: 8px; }
+.arrows button { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line); color: var(--ink-2); display: grid; place-items: center; }
+.arrows button:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ============================================================ SHOWTIMES */
+.filterbar { background: var(--surface); border-bottom: 1px solid var(--line); box-shadow: var(--shadow-card); }
+.filterbar-in { display: flex; align-items: center; gap: clamp(16px, 4vw, 60px); padding: 18px 0; flex-wrap: wrap; }
+.filt { display: flex; align-items: center; gap: 12px; position: relative; }
+.filt .fico { width: 40px; height: 40px; border-radius: 50%; background: var(--accent-l); color: var(--accent-d); display: grid; place-items: center; flex-shrink: 0; }
+.dark .filt .fico { background: rgba(15,179,154,.16); }
+.filt .fl { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); }
+.filt .fv { display: flex; align-items: center; gap: 7px; font-size: 14.5px; font-weight: 700; color: var(--ink); }
+.filt-menu { position: absolute; top: calc(100% + 8px); left: 52px; background: var(--surface); border: 1px solid var(--line); border-radius: 9px; box-shadow: var(--shadow-pop); padding: 5px; z-index: 30; min-width: 170px; }
+.filt-menu button { display: block; width: 100%; text-align: left; padding: 9px 12px; border-radius: 6px; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.filt-menu button:hover { background: var(--accent-l); color: var(--accent-d); }
+.dark .filt-menu button:hover { background: rgba(15,179,154,.14); }
+
+.show-grid { display: grid; grid-template-columns: 1fr 320px; gap: 32px; align-items: start; padding: 36px 0 0; }
+.venues { display: flex; flex-direction: column; }
+.venue { display: grid; grid-template-columns: 280px 1fr; gap: 18px; align-items: center; padding: 26px 0; border-bottom: 1px solid var(--line); }
+.venue:first-child { border-top: 1px solid var(--line); }
+.venue-name { display: flex; align-items: center; gap: 12px; font-size: 15.5px; font-weight: 700; color: var(--ink); }
+.venue-name .fav { color: var(--ink-3); cursor: pointer; } .venue-name .fav:hover, .venue-name .fav.on { color: var(--accent); }
+.venue-name .loc { margin-left: auto; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; color: var(--ink-3); }
+.times { display: flex; flex-wrap: wrap; gap: 11px; }
+.timechip { border: 1px solid var(--line); border-radius: 8px; padding: 11px 18px; font-size: 14px; font-weight: 700; color: var(--ink); background: var(--surface); cursor: pointer; transition: .15s; }
+.timechip:hover { border-color: var(--accent); color: var(--accent-d); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(15,179,154,.2); }
+.show-ad { border-radius: 14px; overflow: hidden; position: relative; box-shadow: var(--shadow-card); }
+.show-ad img { width: 100%; display: block; }
+
+/* ============================================================ SEATS */
+.seats-wrap { padding: 34px 0 0; }
+.screen { max-width: 720px; margin: 10px auto 34px; }
+.screen-bar { height: 56px; border-radius: 100% 100% 0 0 / 100% 100% 0 0; background: linear-gradient(180deg, var(--accent-l), transparent); border-top: 3px solid var(--accent); box-shadow: 0 -10px 30px rgba(15,179,154,.25); }
+.dark .screen-bar { background: linear-gradient(180deg, rgba(15,179,154,.22), transparent); }
+.screen-label { text-align: center; font-size: 12px; letter-spacing: 4px; text-transform: uppercase; color: var(--ink-3); font-weight: 700; margin-top: 8px; }
+.seatmap { max-width: 760px; margin: 0 auto; }
+.tier { margin-bottom: 26px; }
+.tier-head { font-size: 12.5px; font-weight: 700; color: var(--ink-2); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.tier-head::before, .tier-head::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.tier-head b { color: var(--accent-d); }
+.seatrow { display: flex; align-items: center; justify-content: center; gap: 7px; margin-bottom: 8px; }
+.seatrow .rlabel { width: 22px; text-align: center; font-size: 12px; font-weight: 700; color: var(--ink-3); }
+.seat { width: 26px; height: 26px; border-radius: 6px 6px 4px 4px; border: 1.5px solid var(--accent); color: var(--accent-d); font-size: 10px; font-weight: 700; display: grid; place-items: center; cursor: pointer; background: transparent; transition: .12s; }
+.seat:hover { background: var(--accent-l); transform: translateY(-2px); }
+.dark .seat:hover { background: rgba(15,179,154,.18); }
+.seat.sel { background: var(--accent); border-color: var(--accent); color: #04201b; }
+.seat.sold { border-color: var(--line); color: var(--line); background: var(--line-2); cursor: not-allowed; }
+.dark .seat.sold { background: rgba(255,255,255,.05); color: rgba(255,255,255,.18); }
+.seat.gap { border: none; background: none; cursor: default; pointer-events: none; }
+.legend { display: flex; gap: 26px; justify-content: center; margin: 30px 0 10px; flex-wrap: wrap; font-size: 13px; color: var(--ink-2); font-weight: 600; }
+.legend span { display: flex; align-items: center; gap: 8px; }
+.legend i { width: 20px; height: 20px; border-radius: 5px; border: 1.5px solid var(--accent); display: inline-block; }
+.legend i.sel { background: var(--accent); border-color: var(--accent); }
+.legend i.sold { background: var(--line-2); border-color: var(--line); }
+
+.seatbar { position: sticky; bottom: 0; z-index: 40; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -8px 24px rgba(20,32,46,.1); margin-top: 30px; }
+.seatbar-in { display: flex; align-items: center; gap: 20px; padding: 18px 0; flex-wrap: wrap; }
+.seatbar .sb-info { font-size: 13.5px; color: var(--ink-2); } .seatbar .sb-info b { color: var(--ink); font-size: 15px; }
+.seatbar .sb-total { font-size: 22px; font-weight: 800; color: var(--ink); }
+.seatbar .btn-cta { margin-left: auto; }
+.seatbar .btn-cta[disabled] { opacity: .45; pointer-events: none; }
+
+/* ============================================================ CHECKOUT */
+.checkout { padding: 40px 0 0; }
+.co-grid { display: grid; grid-template-columns: 1fr 380px; gap: 30px; align-items: start; }
+.co-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 24px 26px; box-shadow: var(--shadow-card); margin-bottom: 22px; }
+.co-card h3 { font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; margin: 0 0 18px; color: var(--ink); }
+.pay-opt { display: flex; align-items: center; gap: 14px; padding: 16px; border: 1.5px solid var(--line); border-radius: 12px; margin-bottom: 12px; cursor: pointer; transition: .15s; }
+.pay-opt:hover { border-color: var(--accent); }
+.pay-opt.on { border-color: var(--accent); background: var(--accent-l); }
+.dark .pay-opt.on { background: rgba(15,179,154,.12); }
+.pay-opt .po-ico { width: 42px; height: 42px; border-radius: 10px; background: var(--bg); display: grid; place-items: center; color: var(--accent-d); flex-shrink: 0; }
+.pay-opt .po-t { font-weight: 700; font-size: 14.5px; color: var(--ink); } .pay-opt .po-s { font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+.pay-opt .po-radio { margin-left: auto; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); }
+.pay-opt.on .po-radio { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 0 5px, transparent 6px); }
+.pay-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+.pay-fields .full { grid-column: 1 / -1; }
+.fld { display: flex; flex-direction: column; gap: 6px; }
+.fld label { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.fld input { border: 1.5px solid var(--line); border-radius: 9px; padding: 12px 14px; font-size: 14px; font-family: inherit; background: var(--surface); color: var(--ink); outline: none; }
+.fld input:focus { border-color: var(--accent); }
+
+.summary { position: sticky; top: 86px; }
+.sum-poster { display: flex; gap: 14px; padding-bottom: 18px; border-bottom: 1px dashed var(--line); margin-bottom: 18px; }
+.sum-poster .sp-img { width: 64px; height: 86px; border-radius: 9px; overflow: hidden; flex-shrink: 0; }
+.sum-poster .sp-img img { width: 100%; height: 100%; object-fit: cover; }
+.sum-poster .sp-t { font-size: 16px; font-weight: 800; color: var(--ink); }
+.sum-poster .sp-s { font-size: 12.5px; color: var(--ink-2); margin-top: 4px; line-height: 1.5; }
+.sum-line { display: flex; justify-content: space-between; font-size: 14px; color: var(--ink-2); padding: 7px 0; }
+.sum-line.total { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 14px; font-size: 18px; font-weight: 800; color: var(--ink); }
+.sum-seats { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 14px; }
+.sum-seats span { background: var(--accent-l); color: var(--accent-d); font-size: 12px; font-weight: 800; padding: 4px 9px; border-radius: 6px; }
+.dark .sum-seats span { background: rgba(15,179,154,.16); }
+.co-pay-btn { width: 100%; margin-top: 6px; justify-content: center; display: flex; }
+
+.success { max-width: 540px; margin: 30px auto; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 48px 36px; box-shadow: var(--shadow-card); }
+.success .sc-ico { width: 80px; height: 80px; border-radius: 50%; background: var(--accent-l); color: var(--accent-d); display: grid; place-items: center; margin: 0 auto 22px; }
+.dark .success .sc-ico { background: rgba(15,179,154,.16); }
+.success h2 { font-size: 26px; font-weight: 800; margin: 0 0 8px; color: var(--ink); }
+.success p { color: var(--ink-2); font-size: 14.5px; line-height: 1.6; }
+.success .sc-id { display: inline-block; margin: 18px 0; background: var(--bg); border: 1px dashed var(--line); border-radius: 10px; padding: 12px 22px; font-weight: 800; letter-spacing: 1px; color: var(--ink); }
+.success .sc-actions { display: flex; gap: 12px; justify-content: center; margin-top: 8px; }
+
+/* responsive */
+@media (max-width: 980px) {
+  .dh-in { grid-template-columns: 1fr; }
+  .dh-poster { width: 200px; transform: none; margin: 0 auto; }
+  .dstats-in { padding-left: 0; justify-content: center; text-align: center; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .dformats { justify-content: center; }
+  .cast-grid { grid-template-columns: repeat(2, 1fr); }
+  .show-grid { grid-template-columns: 1fr; }
+  .show-ad { max-width: 360px; }
+  .venue { grid-template-columns: 1fr; gap: 12px; }
+  .co-grid { grid-template-columns: 1fr; }
+  .summary { position: static; }
+}
+@media (max-width: 600px) {
+  .photos { grid-template-columns: 1fr; }
+  .cast-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .dstats-in { gap: 18px; } .dbook { width: 100%; } .btn-cta { width: 100%; }
+  .pay-fields { grid-template-columns: 1fr; }
+  .seat { width: 22px; height: 22px; }
+}
+
+  /* account button avatar (header) — shared on every page */
+  .acct { position: relative; }
+  .acct-btn { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: inherit; }
+  .acct-btn:hover { color: var(--accent); }
+  .acct-btn .uava { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #04201b; display: grid; place-items: center; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script>/* BOLETO content — matches the original BOLETO homepage exactly.
+   window.BOLETO_DATA */
+(function () {
+  window.BOLETO_DATA = {
+    cities: ["Bengaluru", "Mumbai", "Delhi NCR", "Hyderabad", "Chennai", "Pune", "Kolkata"],
+    popularCities: [
+      { name: "Mumbai", ico: "gateway" },
+      { name: "Delhi NCR", ico: "indiagate" },
+      { name: "Bengaluru", ico: "vidhana" },
+      { name: "Hyderabad", ico: "charminar" },
+      { name: "Chandigarh", ico: "rockgarden" },
+      { name: "Ahmedabad", ico: "sabarmati" },
+      { name: "Pune", ico: "shaniwar" },
+      { name: "Chennai", ico: "temple" },
+      { name: "Kolkata", ico: "victoria" },
+      { name: "Kochi", ico: "palms" },
+    ],
+    allCities: ["Agra", "Ajmer", "Allahabad", "Amritsar", "Aurangabad", "Bhopal", "Bhubaneswar", "Chandigarh", "Coimbatore", "Dehradun", "Goa", "Guwahati", "Indore", "Jaipur", "Jalandhar", "Jammu", "Jamshedpur", "Jodhpur", "Kanpur", "Lucknow", "Ludhiana", "Madurai", "Mangalore", "Mysuru", "Nagpur", "Nashik", "Patna", "Raipur", "Rajkot", "Ranchi", "Surat", "Thiruvananthapuram", "Tiruchirappalli", "Udaipur", "Vadodara", "Varanasi", "Vijayawada", "Visakhapatnam"],
+    dates: ["Any date", "Today", "Tomorrow", "This weekend", "This month"],
+    cinemas: ["All cinemas", "PVR Cinemas", "INOX", "Cinepolis", "Carnival"],
+    nav: [
+      { label: "Home", on: true },
+      { label: "Movies", drop: ["Now Showing", "Coming Soon", "Top Rated"] },
+      { label: "Events", drop: ["Concerts", "Workshops", "Conferences"] },
+      { label: "Sports", drop: ["Cricket", "Football", "Basketball"] },
+      { label: "Pages", drop: ["About Us", "Pricing", "FAQ", "Contact"] },
+      { label: "Blog", drop: ["Latest Posts", "News", "Reviews"] },
+      { label: "Contact" },
+    ],
+
+    /* hero */
+    hero: {
+      rotate: ["SPORTS", "MOVIES", "EVENTS"],
+      sub: "Safe, secure, reliable ticketing. Your ticket to live entertainment!",
+    },
+
+    /* sidebar */
+    promises: [
+      { ico: "care", t: "24X7 Care" },
+      { ico: "shield", t: "100% Assurance" },
+      { ico: "medal", t: "Our Promise" },
+    ],
+    trending: [
+      { name: "Jawan", cat: "Movies" },
+      { name: "Pathaan", cat: "Movies" },
+      { name: "Digital Marketing Conference 2026", cat: "Event" },
+      { name: "World Cup Final", cat: "Sports" },
+    ],
+    ads: [
+      { kicker: "50% OFF", title: "Be Strong! Come & Join Us", note: "Call: 022-6394911", colors: ["#b3261f", "#e0603a"] },
+      { kicker: "New Arrival", title: "Sport Outfit", price: "$299", cta: "Shop Now", colors: ["#c2298a", "#e8447a"] },
+    ],
+
+    /* movies — grid of 6, with critic/audience meters */
+    movies: [
+      { title: "Jawan", genre: "Action • Thriller", rating: 4.6, runtime: 169, critic: 85, audience: 82, colors: ["#2b2b30", "#6c7a89"], cert: "UA", langs: ["Hindi", "Tamil", "Telugu"], formats: ["2D", "IMAX", "4DX"], desc: "A man driven by a personal vendetta rises to rectify society's wrongs." },
+      { title: "Pathaan", genre: "Action • Spy", rating: 4.2, runtime: 146, critic: 80, audience: 77, colors: ["#1b2a3a", "#2c6e9b"], cert: "UA", langs: ["Hindi", "English"], formats: ["2D", "IMAX"], desc: "An exiled spy returns to defend his nation against a deadly threat." },
+      { title: "Animal", genre: "Action • Drama • Crime", rating: 3.9, runtime: 201, critic: 78, audience: 75, colors: ["#3a1414", "#a3382f"], cert: "A", langs: ["Hindi", "Telugu"], formats: ["2D", "4DX"], desc: "A son's fierce love for his father spirals into bloodshed." },
+      { title: "Dunki", genre: "Comedy • Drama", rating: 3.7, runtime: 161, critic: 70, audience: 67, colors: ["#2a2233", "#7a5fa3"], cert: "UA", langs: ["Hindi"], formats: ["2D"], desc: "Four friends from a village chase a dream across borders." },
+      { title: "Salaar: Part 1", genre: "Action • Thriller", rating: 4.1, runtime: 175, critic: 82, audience: 79, colors: ["#10202a", "#1d5a66"], cert: "A", langs: ["Telugu", "Hindi", "Tamil"], formats: ["2D", "IMAX"], desc: "Two friends become foes in a war over a ruthless empire." },
+      { title: "Leo", genre: "Action • Thriller", rating: 4.0, runtime: 164, critic: 76, audience: 73, colors: ["#241018", "#8e2f4f"], cert: "UA", langs: ["Tamil", "Hindi"], formats: ["2D", "4DX"], desc: "A mild café owner is hunted by a gang that claims to know his past." },
+    ],
+
+    /* events — grid of 3 */
+    events: [
+      { title: "Digital Marketing Conference 2020", addr1: "17 South Sherman Street,", addr2: "Astoria, NY 11106", day: "14", mon: "May", colors: ["#3a1024", "#a3306f"], price: "Rs 1499 onwards", cat: "Conference", desc: "A full-day conference on the future of digital marketing." },
+      { title: "Tech Summit 2026", addr1: "17 South Sherman Street,", addr2: "Astoria, NY 11106", day: "16", mon: "May", colors: ["#101e3a", "#2f4fb0"], price: "₹1999 onwards", cat: "Summit", desc: "Industry leaders share what's next in technology." },
+      { title: "Business Growth Workshop", addr1: "17 South Sherman Street,", addr2: "Astoria, NY 11106", day: "18", mon: "May", colors: ["#102a24", "#15a06a"], price: "₹999 onwards", cat: "Workshop", desc: "Hands-on strategies to scale your business." },
+    ],
+
+    /* sports — grid of 3 */
+    sports: [
+      { title: "World Cup Final", venue: "Grand Stadium", day: "14", mon: "May", time: "8 PM", colors: ["#0b3d2e", "#13a05a"], price: "₹999 onwards", cat: "Football", desc: "Football League Tournament — the season decider under the lights." },
+      { title: "NBA Championship", venue: "Grand Stadium", day: "17", mon: "May", time: "9 PM", colors: ["#1a2a4a", "#2f5fb0"], price: "₹1499 onwards", cat: "Basketball", desc: "The biggest basketball night of the year, live." },
+      { title: "Cricket T20 League", venue: "Grand Stadium", day: "20", mon: "May", time: "7 PM", colors: ["#3a2a10", "#cf8a1e"], price: "₹799 onwards", cat: "Cricket", desc: "Under-the-lights T20 thriller with the city's best." },
+    ],
+
+    /* ---- booking flow data (shared) ---- */
+    offers: [
+      { ico: "amazon", name: "Amazon Pay Cashback Offer", note: "Win Cashback Upto Rs 300*", color: "#ff9900" },
+      { ico: "paypal", name: "PayPal Offer", note: "Transact first time with PayPal and get 100% cashback up to Rs. 500", color: "#1f6fb0" },
+      { ico: "bank", name: "HDFC Bank Offer", note: "Get 15% discount up to INR 100* and INR 50* off on F&B. T&C apply", color: "#e3262e" },
+    ],
+    cast: [
+      { name: "Nora Hardy", role: "Actor", as: "As Raven" },
+      { name: "Alvin Peters", role: "Actor", as: "As Magneto" },
+      { name: "Josh Potter", role: "Actor", as: "As Quicksilver" },
+      { name: "Bill Hader", role: "Actor", as: "As Richie Tozier" },
+      { name: "Emma Stone", role: "Actor", as: "As Mystique" },
+      { name: "Ryan Cole", role: "Actor", as: "As Beast" },
+    ],
+    crew: [
+      { name: "Howard Bass", role: "Executive Producer" },
+      { name: "Naomi Smith", role: "Producer" },
+      { name: "Tom Martinez", role: "Producer" },
+      { name: "Pete Warren", role: "Director" },
+      { name: "Lily Brooks", role: "Writer" },
+      { name: "Carl Reed", role: "Cinematographer" },
+    ],
+    synopsis: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin vehicula eros sit amet est tincidunt aliquet. Fusce laoreet ligula ac ultrices eleifend. Donec hendrerit fringilla odio, ut feugiat mi convallis nec. Fusce elit ex, blandit vitae mattis sit amet, iaculis ac elit. Ut diam mauris, viverra sit amet dictum vel, aliquam ac quam. Ut mi nisl, fringilla sit amet erat et, convallis porttitor ligula. Sed auctor, orci id luctus venenatis, dui dolor euismod risus, et pharetra orci lectus quis sapien.",
+    photoCount: 3,
+    experiences: ["English-2D", "Hindi-2D", "Hindi-3D", "Hindi-IMAX 2D", "Tamil-2D"],
+    venues: [
+      { name: "AMB Cinemas: Gachibowli", times: ["10:00", "13:15", "16:30", "19:45", "22:30"] },
+      { name: "PVR: Mani Square", times: ["10:00", "13:15", "16:30", "19:45", "22:30"] },
+      { name: "Cinépolis: Viviana Mall, Thane", times: ["10:00", "13:15", "16:30", "19:45", "22:30"] },
+      { name: "INOX: Garuda Mall", times: ["11:00", "14:30", "18:00", "21:30"] },
+    ],
+    seatPlan: {
+      tiers: [
+        { name: "Recliner", price: 450, rows: ["A", "B"] },
+        { name: "Prime", price: 250, rows: ["C", "D", "E", "F"] },
+        { name: "Classic", price: 180, rows: ["G", "H", "J", "K"] },
+      ],
+      cols: 14,
+      aisleAfter: 7,
+      sold: ["A3", "A4", "C7", "C8", "D2", "E10", "E11", "F5", "G1", "G2", "H9", "J6", "J7", "K12"],
+    },
+    fees: { convenience: 35 },
+
+    /* ---- event detail + flow ---- */
+    eventInfo: {
+      countdownTo: "2026-09-19T09:00:00",
+      duration: "3 Days (Friday-Sunday)",
+      workshops: "70+ Workshops",
+      email: "hello@boleto.com",
+      ready: "Are you ready to attend?",
+      intro: [
+        "Morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, tristique senectus et netus et malesuada fames ac turpis egestas eget.",
+        "Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris Eonec eu ribero sit amet quam egestas semper. Aenean are ultricies mi senectus et netus et malesuada.",
+      ],
+      galleryCount: 5,
+      speakers: [
+        { name: "Grass Hopper", role: "Lead Speaker" },
+        { name: "Gerard Bryan", role: "Lead Speaker" },
+        { name: "Raihan Rafuj", role: "Lead Speaker" },
+        { name: "Bela Bose", role: "Lead Speaker" },
+        { name: "Nina Park", role: "Lead Speaker" },
+        { name: "Omar Faruk", role: "Lead Speaker" },
+      ],
+      stats: [
+        { ico: "ticket", n: "450", l: "Tickets Booked" },
+        { ico: "cal", n: "500", l: "Useful Sessions" },
+        { ico: "mic", n: "28", l: "Talented Speakers" },
+      ],
+      faq: [
+        { q: "Can I Upgrade my Tickets after Placing an Order?", a: "Yes. As long as the event has available inventory, you can upgrade your tickets from your account up to 24 hours before the event begins." },
+        { q: "Why did the delivery method of my tickets change?", a: "Being that BOLETO does not own any of the tickets sold on our site, we do not have the ability to exchange or replace tickets with other inventory. If you would like to upgrade or change the location of your seats, you can relist your current tickets for sale here and purchase other tickets of your choice." },
+        { q: "Why is there a different name printed on the tickets and will this give me problems at my event?", a: "Tickets are often transferred between sellers. The name on the ticket does not affect entry — only a valid barcode is required at the gate." },
+        { q: "My tickets are not consecutive seats, are they still guaranteed together?", a: "When you select 'seated together' at checkout, we guarantee your seats are side by side or we'll refund the difference." },
+        { q: "How will I receive my tickets?", a: "Your e-tickets are emailed instantly and also available under 'My Bookings' for mobile entry." },
+      ],
+      sponsorTabs: ["Platinum Sponsors", "Gold Sponsors", "Silver Sponsors"],
+      sponsors: ["codecanyon", "graphicriver", "3docean", "audiojungle", "themeforest"],
+    },
+
+    snacks: [
+      { name: "Butter Popcorn", price: 5.99 },
+      { name: "Cheese Popcorn", price: 6.99 },
+      { name: "Caramel Popcorn", price: 6.99 },
+      { name: "Mix Combo", price: 7.99 },
+      { name: "Nachos", price: 4.99 },
+      { name: "Soft Drink", price: 2.99 },
+      { name: "Hot Dog", price: 4.99 },
+      { name: "Candy Pack", price: 3.99 },
+    ],
+
+    eventSeatPlan: {
+      tiers: [
+        { name: "Premium", price: 150, rows: ["A", "B", "C"] },
+        { name: "VIP", price: 100, rows: ["D", "E", "F"] },
+        { name: "Regular", price: 50, rows: ["G", "H", "I"] },
+      ],
+      cols: 20,
+      booked: ["A1", "B2", "E15", "F15"],
+      held: ["C5", "C6", "H10", "H11"],
+    },
+    sportSeatPlan: {
+      tiers: [
+        { name: "VIP", price: 150, rows: ["A", "B", "C"] },
+        { name: "Premium", price: 80, rows: ["D", "E", "F"] },
+        { name: "Standard", price: 30, rows: ["G", "H", "I"] },
+      ],
+      cols: 20,
+      booked: ["A1", "A5", "F10"],
+      held: ["C12", "H7"],
+    },
+    vatRate: 0.05,
+
+    footer: {
+      social: ["fb", "tw", "ig", "yt"],
+      links: ["About", "Terms Of Use", "Privacy Policy", "FAQ", "Feedback"],
+    },
+  };
+})();
+</script>
+  <script type="text/babel">
+/* tweaks stubs (panel removed for lean single-file build) */
+window.useTweaks = function(defaults){ return [defaults, function(){}]; };
+window.TweaksPanel = function(){ return null; };
+window.TweakSection = window.TweakToggle = window.TweakColor = window.TweakRadio =
+window.TweakSelect = window.TweakSlider = window.TweakText = window.TweakNumber =
+window.TweakButton = function(){ return null; };
+</script>
+  <script type="text/babel">
+/* BOLETO — shared UI components (exported to window) */
+const { useState, useRef, useEffect } = React;
+
+/* ---------- icons ---------- */
+function Icon({ n, s = 18, ...p }) {
+  const sw = p.sw || 2;
+  const paths = {
+    search: <><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></>,
+    pin: <><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z" /><circle cx="12" cy="10" r="2.5" /></>,
+    down: <path d="m6 9 6 6 6-6" />,
+    left: <path d="m15 18-6-6 6-6" />,
+    right: <path d="m9 18 6-6-6-6" />,
+    up: <path d="m6 15 6-6 6 6" />,
+    star: <path d="m12 3 2.6 5.6 6 .7-4.4 4.1 1.2 6L12 16.8 6.6 19.4l1.2-6L3.4 9.3l6-.7L12 3Z" fill="currentColor" stroke="none" />,
+    ticket: <><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2 2 2 0 0 0 0 4 2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 2 2 0 0 0 0-4Z" /><path d="M13 7v10" strokeDasharray="2 2" /></>,
+    close: <path d="m6 6 12 12M18 6 6 18" />,
+    check: <path d="m5 13 4 4L19 7" />,
+    cal: <><rect x="3" y="4.5" width="18" height="16" rx="2" /><path d="M3 9h18M8 3v4M16 3v4" /></>,
+    film: <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4" /></>,
+    cinema: <><path d="M4 8h16v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z" /><path d="m4 8 4-4 4 4M12 4l4 4M4 12h16" /></>,
+    care: <path d="M12 20s-7-4.5-7-9.5A4 4 0 0 1 12 7a4 4 0 0 1 7 3.5C19 15.5 12 20 12 20Z" />,
+    heart: <path d="M12 20s-7-4.5-7-9.5A4 4 0 0 1 12 7a4 4 0 0 1 7 3.5C19 15.5 12 20 12 20Z" fill="currentColor" stroke="none" />,
+    seat: <><path d="M5 11V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4" /><path d="M4 11h16a1 1 0 0 1 1 1v4h-2v-2H5v2H3v-4a1 1 0 0 1 1-1Z" /></>,
+    plus: <path d="M12 5v14M5 12h14" />,
+    minus: <path d="M5 12h14" />,
+    mic: <><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8" /></>,
+    play: <path d="M8 5v14l11-7L8 5Z" fill="currentColor" stroke="none" />,
+    clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+    mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></>,
+    info: <><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></>,
+    shield: <><path d="M12 3 5 6v5c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6l-7-3Z" /><path d="m9 12 2 2 4-4" /></>,
+    medal: <><circle cx="12" cy="14" r="5" /><path d="m9 9-2-6M15 9l2-6M12 12.5l.9 1.8 2 .3-1.4 1.4.3 2-1.8-1-1.8 1 .3-2-1.4-1.4 2-.3.9-1.8Z" /></>,
+    pop: <><path d="M6 8h12l-1.2 12.2a1 1 0 0 1-1 .8H8.2a1 1 0 0 1-1-.8L6 8Z" /><path d="M5 8a2 2 0 0 1 2-2 2.2 2.2 0 0 1 4-1 2.2 2.2 0 0 1 4 1 2 2 0 0 1 2 2" /><path d="M10 11v7M14 11v7" /></>,
+    fb: <path d="M14 8h2V5h-2a3 3 0 0 0-3 3v2H9v3h2v6h3v-6h2l1-3h-3V8a1 1 0 0 1 1-1Z" fill="currentColor" stroke="none" />,
+    tw: <path d="M21 5.5c-.7.3-1.4.5-2.2.6a3.7 3.7 0 0 0 1.6-2 7.6 7.6 0 0 1-2.4.9 3.8 3.8 0 0 0-6.5 3.5A10.8 10.8 0 0 1 3.9 4.9a3.8 3.8 0 0 0 1.2 5.1c-.6 0-1.2-.2-1.7-.5a3.8 3.8 0 0 0 3 3.7c-.5.2-1.1.2-1.7.1a3.8 3.8 0 0 0 3.5 2.6A7.6 7.6 0 0 1 3 17.5 10.7 10.7 0 0 0 8.8 19c7 0 10.8-5.8 10.8-10.8v-.5c.7-.5 1.4-1.2 1.9-2Z" fill="currentColor" stroke="none" />,
+    ig: <><rect x="4" y="4" width="16" height="16" rx="4.5" /><circle cx="12" cy="12" r="3.4" /><circle cx="17" cy="7" r="1" fill="currentColor" stroke="none" /></>,
+    yt: <><rect x="3" y="6" width="18" height="12" rx="3.5" /><path d="m11 9.5 4 2.5-4 2.5Z" fill="currentColor" stroke="none" /></>,
+  };
+  return (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" {...p}>{paths[n]}</svg>
+  );
+}
+
+/* ---------- images / tint ---------- */
+function slugify(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
+function img(title, w, h) { return `https://picsum.photos/seed/boleto-${slugify(title)}/${w}/${h}`; }
+function hex(c, a) { const n = parseInt(c.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; }
+function tint(colors) { const [a, b] = colors; return `linear-gradient(160deg, ${hex(a, .26)} 0%, transparent 44%, ${hex(b, .3)} 100%)`; }
+
+/* ---------- section head ---------- */
+function SecHead({ title, onAll }) {
+  return (
+    <div className="sec-head">
+      <h2 className="sec-title">{title}</h2>
+      {onAll && <a className="see-all" onClick={onAll}>View All <Icon n="right" s={15} /></a>}
+    </div>
+  );
+}
+
+/* ---------- movie card ---------- */
+function MovieCard({ m, onOpen }) {
+  return (
+    <div className="mcard" onClick={() => onOpen(m)}>
+      <div className="m-poster">
+        <img src={(m.poster || img(m.title, 360, 480))} alt={m.title} loading="lazy" />
+        <div className="m-tint" style={{ background: tint(m.colors) }} />
+        <div className="m-fade" />
+        <div className="m-tag"><b>BOLETO</b><span>Now Showing</span></div>
+        <div className="m-ov">
+          <div className="m-ov-title">{m.title}</div>
+          <div className="m-ov-gen">{m.genre}</div>
+          <div className="m-ov-rate"><Icon n="star" s={13} className="star" /> {m.rating}/5 <span className="dot">·</span> {m.runtime} min</div>
+        </div>
+      </div>
+      <div className="m-foot">
+        <span className="m-foot-name">{m.title}</span>
+        <span className="m-stats">
+          <span className="m-stat crit"><span className="ring" /> {m.critic}%</span>
+          <span className="m-stat aud"><Icon n="pop" s={16} /> {m.audience}%</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- event / sport card ---------- */
+function EventCard({ e, onOpen }) {
+  return (
+    <div className="ecard" onClick={() => onOpen(e)}>
+      <div className="e-img">
+        <img src={(e.image || img(e.title, 480, 330))} alt={e.title} loading="lazy" />
+        <div className="e-tint" style={{ background: tint(e.colors) }} />
+        <div className="e-date"><b>{e.day}</b><span>{e.mon}</span></div>
+        {e.time && <div className="e-time">{e.time}</div>}
+      </div>
+      <div className="e-body">
+        <div className="e-name">{e.title}</div>
+        <div className="e-meta"><Icon n="pin" s={14} /><span>{e.venue || e.addr2 || e.addr1}</span></div>
+        {e.price && <div className="e-price">{e.price}</div>}
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { Icon, slugify, img, hex, tint, SecHead, MovieCard, EventCard });
+
+/* ---------- city monument icons (line art) ---------- */
+function CityIcon({ n, s = 46 }) {
+  const m = {
+    gateway: <><path d="M8 40V20a14 14 0 0 1 28 0v20" /><path d="M14 40V22M30 40V22M22 40V18" /><path d="M5 40h34M10 14l4-4 4 4M26 14l4-4 4 4" /></>,
+    indiagate: <><path d="M14 40V16a8 8 0 0 1 16 0v24" /><path d="M9 40h26M14 16h16M22 8v4M17 12l5-3 5 3" /><path d="M18 40V22h8v18" /></>,
+    vidhana: <><path d="M6 40h32M10 40V22h24v18" /><path d="M22 6c4 2 6 5 6 9H16c0-4 2-7 6-9Z" /><path d="M16 22v-3h12v3M13 40V26M19 40V26M25 40V26M31 40V26" /></>,
+    charminar: <><path d="M8 40V18h24v22" /><path d="M6 40h32M12 18V12M28 18V12M11 11l1.5-3 1.5 3M27 11l1.5-3 1.5 3" /><path d="M16 40V26h8v14M20 18v-4" /></>,
+    rockgarden: <><path d="M6 40h32M10 40V24l10-8 10 8v16" /><path d="M16 40V30h8v10M20 16V9M15 13l5-5 5 5" /></>,
+    sabarmati: <><path d="M6 40h32M9 40V26h22v14" /><path d="M9 26l11-9 11 9M16 40V30h8v10M20 17v-5" /></>,
+    shaniwar: <><path d="M7 40V20l13-9 13 9v20" /><path d="M5 40h30M14 40V26h12v14M20 11V6M16 9l4-4 4 4" /></>,
+    temple: <><path d="M8 40V24h24v16" /><path d="M6 40h32M12 24l8-12 8 12M16 40V30h8v10M20 12V7" /><path d="M14 24v-2h12v2" /></>,
+    victoria: <><path d="M8 40V22h24v18" /><path d="M20 6c5 2 8 6 8 12H12c0-6 3-10 8-12Z" /><path d="M6 40h32M14 40V26h4v14M26 40V26h-4v14M20 18v-4" /></>,
+    palms: <><path d="M6 40h32" /><path d="M14 40c0-8 1-14 1-18M15 22c-3-3-7-3-9-1M15 22c3-3 7-3 9-1M15 22c-2-4-1-8 1-10M15 22c2-3 5-4 8-3" /><path d="M22 40V28h10v12M26 28v-3h4v3" /></>,
+  };
+  return (
+    <svg width={s} height={s} viewBox="0 0 40 44" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      {m[n] || m.temple}
+    </svg>
+  );
+}
+
+Object.assign(window, { CityIcon });
+
+  </script>
+  <script type="text/babel">
+/* BOLETO — header, hero, search panel, sidebar, modal, footer */
+const { useState: uS, useRef: uR, useEffect: uE } = React;
+
+/* ---------- city picker modal (BookMyShow-style) ---------- */
+function CityModal({ D, city, setCity, onClose }) {
+  const [q, setQ] = uS("");
+  const [all, setAll] = uS(false);
+  uE(() => { document.body.classList.add("no-scroll"); return () => document.body.classList.remove("no-scroll"); }, []);
+  const pick = (c) => { location.href = "/design-api/city?name=" + encodeURIComponent(c); };
+  const fullList = [...D.popularCities.map(p => p.name), ...(D.allCities || [])];
+  const uniq = [...new Set(fullList)].sort();
+  const matches = q ? uniq.filter(c => c.toLowerCase().includes(q.toLowerCase())) : null;
+
+  return (
+    <div className="city-back" onClick={onClose}>
+      <div className="city-modal" onClick={e => e.stopPropagation()}>
+        <button className="city-x" onClick={onClose} aria-label="Close"><Icon n="close" s={20} /></button>
+        <div className="city-search">
+          <Icon n="search" s={20} />
+          <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Search for your city" />
+        </div>
+        <button className="city-detect" onClick={() => pick(D.cities[0])}>
+          <Icon n="pin" s={17} /> Detect my location
+        </button>
+
+        {matches ? (
+          <div className="city-results">
+            {matches.length ? matches.map(c => (
+              <button key={c} className={"city-result" + (c === city ? " on" : "")} onClick={() => pick(c)}>{c}</button>
+            )) : <div className="city-empty">No cities found for "{q}"</div>}
+          </div>
+        ) : (
+          <>
+            <div className="city-pop-label">Popular Cities</div>
+            <div className="city-pop">
+              {D.popularCities.map(p => (
+                <button key={p.name} className={"city-pop-item" + (p.name === city ? " on" : "")} onClick={() => pick(p.name)}>
+                  <CityIcon n={p.ico} s={46} />
+                  <span>{p.name}</span>
+                </button>
+              ))}
+            </div>
+            <button className="city-viewall" onClick={() => setAll(a => !a)}>{all ? "Hide Cities" : "View All Cities"}</button>
+            {all && (
+              <div className="city-all">
+                {(D.allCities || []).map(c => (
+                  <button key={c} className={"city-result" + (c === city ? " on" : "")} onClick={() => pick(c)}>{c}</button>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- header ---------- */
+function Header({ D, city, setCity, onToast }) {
+  const [cityOpen, setCityOpen] = uS(false);
+  const [acctOpen, setAcctOpen] = uS(false);
+  return (
+    <header className="hdr">
+      <div className="wrap hdr-in">
+        <a className="logo" href="/"><span className="logo-mark"><Icon n="ticket" s={19} /></span><span>BOLE<b>TO</b></span></a>
+        <nav className="nav">
+          {D.nav.map((it) => (
+            <div className="nav-item" key={it.label}>
+              <a className={"nav-link" + (it.on ? " on" : "")} href={it.href || undefined} onClick={(e) => { if (!it.href) { e.preventDefault(); onToast(it.label); } }}>
+                {it.label}{it.drop && it.drop.length > 0 && <Icon n="down" s={14} className="chev" />}
+              </a>
+              {it.drop && it.drop.length > 0 && (
+                <div className="nav-drop">{it.drop.map((d, di) => <a key={di} href={(d && d.href) || undefined} onClick={(e) => { if (!(d && d.href)) { e.preventDefault(); onToast(d.label || d); } }}>{(d && d.label) || d}</a>)}</div>
+              )}
+            </div>
+          ))}
+        </nav>
+        <div className="hdr-right">
+          <button className="city" onClick={() => setCityOpen(true)}>
+            <Icon n="pin" s={16} className="pin" /><span className="cityname">{city}</span><Icon n="down" s={14} />
+          </button>
+          <div className="acct" style={{ position: "relative" }}>
+            <button className="acct-btn" onClick={() => { if (!(window.BOLETO_DATA.auth && window.BOLETO_DATA.auth.user)) { location.href = "/sign-in"; return; } setAcctOpen(o => !o); }}>
+              <span className="uava">{(window.BOLETO_DATA.auth && window.BOLETO_DATA.auth.user) ? window.BOLETO_DATA.auth.user.name.charAt(0).toUpperCase() : "?"}</span><span className="cityname">{(window.BOLETO_DATA.auth && window.BOLETO_DATA.auth.user) ? window.BOLETO_DATA.auth.user.name : "Sign in"}</span><Icon n="down" s={14} />
+            </button>
+            {acctOpen && (
+              <div className="nav-drop" style={{ display: "block", opacity: 1, visibility: "visible", transform: "none", right: 0, left: "auto", minWidth: 170 }}>
+                {["My Bookings", "Sign Out"].map(a => (
+                  <a key={a} onClick={() => { setAcctOpen(false); if (a === "Sign Out") { fetch("/design-api/logout", { method: "POST", headers: { Accept: "application/json" } }).then(() => location.href = "/"); } else { location.href = "/account"; } }}>{a}</a>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        <button className="hdr-burger" onClick={() => onToast("Menu")}><Icon n="film" s={24} /></button>
+      </div>
+      {cityOpen && <CityModal D={D} city={city} setCity={setCity} onClose={() => setCityOpen(false)} />}
+    </header>
+  );
+}
+
+/* ---------- hero + search panel ---------- */
+function Hero({ D, onSearch }) {
+  const words = D.hero.rotate;
+  const [wi, setWi] = uS(0);
+  uE(() => { const t = setInterval(() => setWi(i => (i + 1) % words.length), 2600); return () => clearInterval(t); }, [words.length]);
+  return (
+    <section className="hero">
+      <div className="hero-bg"><img src={img("cinema-theatre-stage-lights", 1600, 700)} alt="" /></div>
+      <div className="hero-veil" />
+      <div className="wrap hero-in">
+        <h1>Book Your<br />Tickets for <span className="rot">{words[wi]}</span></h1>
+        <p>{D.hero.sub}</p>
+      </div>
+    </section>
+  );
+}
+
+function SearchPanel({ D, onSearch }) {
+  const tabs = [{ k: "Movie", i: "film" }, { k: "Events", i: "cal" }, { k: "Sports", i: "ticket" }];
+  const [tab, setTab] = uS("Movie");
+  const [q, setQ] = uS("");
+  const [city, setCity] = uS("All cities");
+  const [date, setDate] = uS("Any date");
+  const [cin, setCin] = uS("All cinemas");
+  const [open, setOpen] = uS(null);
+  const Sel = ({ id, label, val, set, opts }) => (
+    <div className="sp-field" onClick={() => setOpen(o => o === id ? null : id)}>
+      <Icon n={id === "city" ? "pin" : id === "date" ? "cal" : "cinema"} s={18} />
+      <div className="sp-sel">
+        <small>{label}</small>
+        <button>{val}<Icon n="down" s={13} className="chev" /></button>
+      </div>
+      {open === id && (
+        <div className="sp-menu" onClick={e => e.stopPropagation()}>
+          {opts.map(o => <button key={o} onClick={() => { set(o); setOpen(null); }}>{o}</button>)}
+        </div>
+      )}
+    </div>
+  );
+  return (
+    <div className="wrap searchp">
+      <div className="searchp-card">
+        <div className="sp-top">
+          <div>
+            <div className="sp-kicker">Welcome to BOLETO</div>
+            <div className="sp-title">What are you looking for?</div>
+          </div>
+          <div className="sp-tabs">
+            {tabs.map(t => (
+              <button key={t.k} className={"sp-tab" + (t.k === tab ? " on" : "")} onClick={() => setTab(t.k)}>
+                <i><Icon n={t.i} s={13} /></i>{t.k}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="sp-row">
+          <div className="sp-field">
+            <Icon n="search" s={18} />
+            <input value={q} onChange={e => setQ(e.target.value)} placeholder={`Search for ${tab === "Movie" ? "Movies" : tab}`} onKeyDown={e => e.key === "Enter" && onSearch(q || tab)} />
+            <button className="sp-search-btn" onClick={() => onSearch(q || tab)}><Icon n="search" s={17} /></button>
+          </div>
+          <Sel id="city" label="City" val={city} set={setCity} opts={["All cities", ...D.cities]} />
+          <Sel id="date" label="Date" val={date} set={setDate} opts={D.dates} />
+          <Sel id="cinema" label="Cinema" val={cin} set={setCin} opts={D.cinemas} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- sidebar ---------- */
+function Sidebar({ D, onToast, onOpenTrend }) {
+  return (
+    <aside className="side">
+      <div className="promise">
+        {D.promises.map(p => (
+          <div className="promise-row" key={p.t}><span className="pico"><Icon n={p.ico} s={19} /></span><b>{p.t}</b></div>
+        ))}
+      </div>
+
+      <div className="ad" onClick={() => onToast("Special offer")} style={{ cursor: "pointer" }}>
+        <img src={img("fitness-gym-training", 320, 200)} alt="" />
+        <div className="ad-veil" style={{ background: "linear-gradient(120deg, rgba(179,38,31,.85), rgba(224,96,58,.4))" }} />
+        <div className="ad-kicker">{D.ads[0].kicker}</div>
+        <div className="ad-title">{D.ads[0].title}</div>
+        <div className="ad-note">{D.ads[0].note}</div>
+        <button className="ad-cta">Call Now</button>
+      </div>
+
+      <div className="trend">
+        <h4>Trending Searches</h4>
+        {D.trending.map(t => (
+          <a key={t.name} onClick={() => onOpenTrend(t)}>
+            <div className="tn">{t.name}</div><div className="tc">{t.cat}</div>
+          </a>
+        ))}
+      </div>
+
+      <div className="ad" onClick={() => onToast("New arrivals")} style={{ cursor: "pointer" }}>
+        <img src={img("sport-outfit-fashion", 320, 220)} alt="" />
+        <div className="ad-veil" style={{ background: "linear-gradient(120deg, rgba(194,41,138,.85), rgba(232,68,122,.45))" }} />
+        <div className="ad-kicker">{D.ads[1].kicker}</div>
+        <div className="ad-title">{D.ads[1].title}</div>
+        <div className="ad-price">{D.ads[1].price}</div>
+        <button className="ad-cta">{D.ads[1].cta}</button>
+      </div>
+    </aside>
+  );
+}
+
+/* ---------- booking modal ---------- */
+function BookingModal({ item, onClose, onBooked }) {
+  const isMovie = item.genre !== undefined && item.runtime !== undefined;
+  const [fmt, setFmt] = uS(isMovie ? item.formats[0] : null);
+  const [lang, setLang] = uS(isMovie ? item.langs[0] : null);
+  const [time, setTime] = uS(null);
+  const [done, setDone] = uS(false);
+  uE(() => { document.body.classList.add("no-scroll"); return () => document.body.classList.remove("no-scroll"); }, []);
+  const times = isMovie ? ["10:30 AM", "01:45 PM", "05:15 PM", "09:00 PM"] : ["Gold", "Premium", "Silver"];
+  const price = isMovie ? "₹" + (180 + item.formats.indexOf(fmt) * 120) : (item.price || "₹499");
+  const book = () => { setDone(true); setTimeout(() => onBooked(item), 1100); };
+  return (
+    <div className="modal-back" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}><Icon n="close" s={18} /></button>
+        <div className="modal-poster">
+          <img src={(item.poster || item.image || img(item.title, 600, 760))} alt="" />
+          <div className="mp-fade" /><div className="mp-name">{item.title}</div>
+        </div>
+        <div className="modal-body">
+          {done ? (
+            <div className="book-done">
+              <div className="bd-ico"><Icon n="check" s={32} sw={2.5} /></div>
+              <h3 className="m-h">Booking confirmed!</h3>
+              <p style={{ color: "var(--ink-2)", fontSize: 14.5 }}>Your tickets for <b>{item.title}</b> are reserved.{isMovie ? ` ${fmt} • ${lang}${time ? " • " + time : ""}` : (time ? ` ${time} section` : "")}</p>
+            </div>
+          ) : (
+            <>
+              <h3 className="m-h">{item.title}</h3>
+              {isMovie ? (
+                <div className="m-rate"><Icon n="star" s={16} className="star" /><b>{item.rating}/5</b> · {item.cert} · {item.runtime} min · {item.critic}% liked</div>
+              ) : (
+                <div className="m-rate"><Icon n="pin" s={15} />{item.venue || item.addr1} · {item.day} {item.mon}{item.time ? " · " + item.time : ""}</div>
+              )}
+              <p style={{ color: "var(--ink-2)", fontSize: 14, lineHeight: 1.55, margin: "0 0 4px" }}>{item.desc}</p>
+              <div className="m-tags">{(isMovie ? item.genre.split(" • ") : [item.cat]).map(t => <span className="m-tag2" key={t}>{t}</span>)}</div>
+              {isMovie && <>
+                <div className="m-label">Format</div>
+                <div className="chips">{item.formats.map(f => <button key={f} className={"chip" + (f === fmt ? " on" : "")} onClick={() => setFmt(f)}>{f}</button>)}</div>
+                <div className="m-label">Language</div>
+                <div className="chips">{item.langs.map(l => <button key={l} className={"chip" + (l === lang ? " on" : "")} onClick={() => setLang(l)}>{l}</button>)}</div>
+              </>}
+              <div className="m-label">{isMovie ? "Showtime" : "Select tier"}</div>
+              <div className="chips">{times.map(t => <button key={t} className={"chip" + (t === time ? " on" : "")} onClick={() => setTime(t)}>{t}</button>)}</div>
+              <div className="m-foot2">
+                <div className="m-price">From <b>{price}</b></div>
+                <button className="btn-book" style={{ opacity: time ? 1 : .5, pointerEvents: time ? "auto" : "none" }} onClick={book}>Book tickets</button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- footer + scroll top ---------- */
+function Footer({ D, onToast }) {
+  return (
+    <footer className="foot">
+      <div className="wrap">
+        <div className="foot-in">
+          <a className="logo" href="#top"><span className="logo-mark"><Icon n="ticket" s={19} /></span><span>BOLE<b>TO</b></span></a>
+          <div className="foot-social">{D.footer.social.map(s => <a key={s} onClick={() => onToast("Follow us")}><Icon n={s} s={18} /></a>)}</div>
+        </div>
+        <div className="foot-bottom">
+          <span>Copyright © 2026. All Rights Reserved By <b>BOLETO</b></span>
+          <span className="links">{D.footer.links.map(l => <a key={l} onClick={() => onToast(l)}>{l}</a>)}</span>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+function ScrollTop() {
+  const [show, setShow] = uS(false);
+  uE(() => { const h = () => setShow(window.scrollY > 500); window.addEventListener("scroll", h); return () => window.removeEventListener("scroll", h); }, []);
+  return <button className={"totop" + (show ? " show" : "")} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}><Icon n="up" s={20} /></button>;
+}
+
+/* ---------- subscribe band (reused on every page) ---------- */
+function SubscribeBand({ onToast }) {
+  return (
+    <div className="wrap">
+      <div className="subscribe">
+        <div className="sub-glow" />
+        <div className="sub-kicker">Subscribe to BOLETO</div>
+        <h3 className="sub-h">To get exclusive benefits</h3>
+        <form className="sub-form" onSubmit={(e) => { e.preventDefault(); onToast && onToast("Subscribed — welcome to BOLETO!"); }}>
+          <input type="email" required placeholder="Your email address" />
+          <button type="submit">Subscribe</button>
+        </form>
+        <p className="sub-note">We respect your privacy, so we never share your info.</p>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { Header, Hero, SearchPanel, Sidebar, BookingModal, Footer, ScrollTop, SubscribeBand });
+
+  </script>
+  <script type="text/babel">
+/* BOLETO — shared page shell + booking-flow helpers */
+const { useState: sh_us, useEffect: sh_ue } = React;
+
+const SHELL_TWEAKS = /*EDITMODE-BEGIN*/{
+  "accent": ["#0fb39a", "#0a8f7c", "#e6f7f3"],
+  "dark": false
+}/*EDITMODE-END*/;
+
+/* ----- flow helpers ----- */
+function qparam(k) { return new URLSearchParams(location.search).get(k); }
+function getMovie() {
+  const D = window.BOLETO_DATA;
+  const s = qparam("m");
+  return D.movies.find(m => slugify(m.title) === s) || D.movies[0];
+}
+function getEvent() {
+  const D = window.BOLETO_DATA;
+  const s = qparam("e");
+  const all = [...D.events, ...D.sports];
+  return all.find(x => slugify(x.title) === s) || D.events[0];
+}
+function isSport(item) {
+  const D = window.BOLETO_DATA;
+  return D.sports.some(s => slugify(s.title) === slugify(item.title));
+}
+let __memStore = {};
+function saveBooking(patch) {
+  const cur = getBooking();
+  const next = { ...cur, ...patch };
+  try { sessionStorage.setItem("boleto_booking", JSON.stringify(next)); }
+  catch (e) { __memStore.boleto_booking = JSON.stringify(next); }
+  return next;
+}
+function getBooking() {
+  try {
+    const raw = sessionStorage.getItem("boleto_booking");
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    if (__memStore.boleto_booking) { try { return JSON.parse(__memStore.boleto_booking); } catch (e2) {} }
+  }
+  return {};
+}
+function go(url) { location.href = url; }
+function flash(m) { if (window.__boletoToast) window.__boletoToast(m); }
+
+/* ----- page shell ----- */
+function PageShell({ children, banner }) {
+  const [t, setTweak] = useTweaks(SHELL_TWEAKS);
+  const D = window.BOLETO_DATA;
+  const [city, setCity] = sh_us(window.BOLETO_DATA.selectedCity || D.cities[0]);
+  const [toast, setToast] = sh_us(null);
+  sh_ue(() => { window.__boletoToast = (m) => setToast(m); }, []);
+  sh_ue(() => { if (!toast) return; const x = setTimeout(() => setToast(null), 2400); return () => clearTimeout(x); }, [toast]);
+  const rootStyle = { "--accent": t.accent[0], "--accent-d": t.accent[1], "--accent-l": t.accent[2] };
+  return (
+    <div id="top" className={"app" + (t.dark ? " dark" : "")} style={rootStyle}>
+      <Header D={D} city={city} setCity={setCity} onToast={setToast} />
+      {children}
+      <SubscribeBand onToast={setToast} />
+      <Footer D={D} onToast={setToast} />
+      <ScrollTop />
+      {toast && <div className="toast"><Icon n="star" s={16} className="star" />{toast}</div>}
+      <TweaksPanel>
+        <TweakSection label="Theme" />
+        <TweakToggle label="Dark theme" value={t.dark} onChange={(v) => setTweak("dark", v)} />
+        <TweakColor label="Accent color" value={t.accent}
+          options={[["#0fb39a", "#0a8f7c", "#e6f7f3"], ["#10b981", "#059669", "#e7f8f1"], ["#e63950", "#c1142f", "#fdebee"], ["#7a4fd0", "#5a2fb0", "#efeafc"], ["#f0731e", "#cf5410", "#fdeee2"]]}
+          onChange={(v) => setTweak("accent", v)} />
+      </TweaksPanel>
+    </div>
+  );
+}
+
+/* ----- inner page hero banner (the "JAWAN / HINDI" hologram band) ----- */
+function PageBanner({ title, sub, tall, image }) {
+  return (
+    <section className={"pbanner" + (tall ? " tall" : "")}>
+      <img className="pbanner-bg" src={image && /^https?:/.test(image) ? image : img(image || "cinema-theatre-projector-tech", 1600, 520)} alt="" />
+      <div className="pbanner-veil" />
+      <div className="wrap pbanner-in">
+        <h1>{title}</h1>
+        {sub && <div className="pbanner-sub">{sub}</div>}
+      </div>
+    </section>
+  );
+}
+
+Object.assign(window, { qparam, getMovie, getEvent, isSport, saveBooking, getBooking, go, flash, PageShell, PageBanner });
+
+  </script>
+  <script type="text/babel">
+/* BOLETO — Search results (live from /design-api/search) */
+const { useState: r_us, useEffect: r_ue } = React;
+
+function ResultsPage() {
+  const p = new URLSearchParams(location.search);
+  const type = (p.get("type") || "Movie").toLowerCase();
+  const isMovie = type === "movie" || type === "movies";
+  const [d, setD] = r_us(null);
+  const [err, setErr] = r_us(null);
+
+  r_ue(() => {
+    fetch("/design-api/search" + location.search, { headers: { Accept: "application/json" } })
+      .then(r => r.json()).then(setD).catch(() => setErr("Search failed."));
+  }, []);
+
+  const label = isMovie ? "Movies" : type.charAt(0).toUpperCase() + type.slice(1);
+  const bits = [];
+  if (p.get("q")) bits.push('"' + p.get("q") + '"');
+  if (p.get("city")) bits.push(p.get("city"));
+  if (p.get("cinema")) bits.push(p.get("cinema"));
+  if (p.get("date")) bits.push(p.get("date"));
+
+  return (
+    <PageShell>
+      <PageBanner title={"Search · " + label} sub={bits.length ? bits.join(" · ") : "All " + label} />
+      <section className="detail-body">
+        <div className="wrap">
+          {!d && !err && <p style={{ padding: "30px 0", color: "var(--ink-2)" }}>Searching…</p>}
+          {err && <p style={{ padding: "30px 0", color: "var(--ink-2)" }}>{err}</p>}
+          {d && (
+            <p style={{ margin: "4px 0 18px", color: "var(--ink-2)", fontWeight: 600 }}>
+              {d.count} {label.toLowerCase()} found{p.get("q") ? ' for "' + p.get("q") + '"' : ""}.
+            </p>
+          )}
+          {d && d.results.length === 0 && (
+            <div style={{ padding: "20px 0 60px", textAlign: "center", color: "var(--ink-2)" }}>
+              <p style={{ fontSize: 18, fontWeight: 700, color: "var(--ink)" }}>No results found</p>
+              <p>Try a different keyword, city or date.</p>
+              <a className="btn-cta" href="/" style={{ display: "inline-block", marginTop: 12 }}>Back to Home</a>
+            </div>
+          )}
+          {d && d.results.length > 0 && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 22, marginBottom: 50 }}>
+              {d.results.map((it, i) => isMovie
+                ? <MovieCard key={i} m={it} onOpen={(m) => { location.href = "/movie?m=" + slugify(m.title); }} />
+                : <EventCard key={i} e={it} onOpen={(e) => { location.href = "/event?e=" + slugify(e.title); }} />)}
+            </div>
+          )}
+        </div>
+      </section>
+    </PageShell>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<ResultsPage />);
+
+  </script>
+</body>
+</html>

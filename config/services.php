@@ -60,4 +60,14 @@ return [
         'status_url' => env('ESEWA_STATUS_URL', 'https://rc.esewa.com.np/api/epay/transaction/status/'),
     ],
 
+    // Firebase Cloud Messaging (push notifications, HTTP v1 API).
+    // Download a service-account key from Firebase console → Project settings →
+    // Service accounts → "Generate new private key", and point FIREBASE_CREDENTIALS
+    // at it. project_id is read from that file (override with FIREBASE_PROJECT_ID).
+    'firebase' => [
+        // `?:` so an empty env value still falls back to the default path.
+        'credentials' => env('FIREBASE_CREDENTIALS') ?: storage_path('app/firebase/service-account.json'),
+        'project_id' => env('FIREBASE_PROJECT_ID'),
+    ],
+
 ];

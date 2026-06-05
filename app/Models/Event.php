@@ -2,17 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasYoutubeTrailer;
 use App\Models\Concerns\Seatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Event extends Model
 {
-    use HasFactory, Seatable;
+    use HasFactory, HasYoutubeTrailer, Seatable;
 
     protected $fillable = [
-        'title', 'slug', 'description', 'banner_image', 'event_date',
-        'start_time', 'end_time', 'address', 'organizer', 'latitude', 'longitude', 'status', 'seat_layout'
+        'title', 'slug', 'description', 'banner_image', 'trailer_url', 'event_date',
+        'start_time', 'end_time', 'address', 'city_id', 'organizer', 'latitude', 'longitude', 'status', 'seat_layout'
     ];
 
     protected $casts = [
@@ -35,6 +36,11 @@ class Event extends Model
         return $this->tickets->map(fn ($t) => [
             'id' => $t->id, 'name' => $t->type, 'price' => (float) $t->price, 'rows' => (array) $t->seat_rows,
         ]);
+    }
+
+    public function city()
+    {
+        return $this->belongsTo(City::class);
     }
 
     public function categories()

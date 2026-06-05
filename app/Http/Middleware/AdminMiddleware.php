@@ -10,9 +10,19 @@ class AdminMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $request->user() || $request->user()->role !== 'admin') {
-            abort(403, 'Admins only.');
+        $user = $request->user();
+
+        if (! $user) {
+            return redirect()->guest(route('admin.login'));
         }
+
+        // Signed in, but not as an admin (e.g. a customer session): send them to the
+        // admin login so they can switch accounts, instead of a dead-end 403.
+        if ($user->role !== 'admin') {
+            return redirect()->route('admin.login')
+                ->withErrors(['email' => 'You are signed in as a customer. Sign in with an administrator account to continue.']);
+        }
+
         return $next($request);
     }
 }

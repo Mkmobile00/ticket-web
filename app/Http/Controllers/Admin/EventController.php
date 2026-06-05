@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Event;
+use App\Models\EventCategory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
 class EventController extends AdminController
@@ -10,7 +12,13 @@ class EventController extends AdminController
     protected string $modelClass = \App\Models\Event::class;
     protected string $resource = 'event';
 
-    protected function fields(): array
+    /** Admin list columns — include the city (resolved to its name via fkLabelMap). */
+    protected function columns(): array
+    {
+        return ['id', 'title', 'city_id', 'event_date', 'status'];
+    }
+
+    protected function fields(?Model $item = null): array
     {
         $fields = parent::fields();
         foreach ($fields as &$f) {
@@ -18,7 +26,20 @@ class EventController extends AdminController
                 $f['type'] = 'seat-layout';
             }
         }
+        unset($f);
+        $fields[] = [
+            'name' => 'categories',
+            'label' => 'Categories',
+            'type' => 'multiselect',
+            'options' => EventCategory::orderBy('name')->pluck('name', 'id')->all(),
+            'selected' => ($item && $item->exists) ? $item->categories->pluck('id')->all() : [],
+        ];
         return $fields;
+    }
+
+    private function syncCategories(Request $request, Model $item): void
+    {
+        $item->categories()->sync(array_map('intval', (array) $request->input('categories', [])));
     }
 
     protected function rules(?\Illuminate\Database\Eloquent\Model $item = null): array
@@ -67,7 +88,8 @@ class EventController extends AdminController
     {
         $data = $request->validate($this->rules());
         $data['seat_layout'] = $this->normalizeSeatLayout($request);
-        ($this->modelClass)::create($data);
+        $event = ($this->modelClass)::create($data);
+        $this->syncCategories($request, $event);
         return redirect()->route('admin.' . \Illuminate\Support\Str::plural($this->resource) . '.index')->with('status', 'Created.');
     }
 
@@ -83,7 +105,7 @@ class EventController extends AdminController
         return view('admin.crud.form', [
             'item' => $item,
             'resource' => $this->resource,
-            'fields' => $this->fields(),
+            'fields' => $this->fields($item),
             'title' => 'Edit ' . ucwords(str_replace('-', ' ', $this->resource)),
         ]);
     }
@@ -94,6 +116,7 @@ class EventController extends AdminController
         $data = $request->validate($this->rules($item));
         $data['seat_layout'] = $this->normalizeSeatLayout($request);
         $item->update($data);
+        $this->syncCategories($request, $item);
         return redirect()->route('admin.' . \Illuminate\Support\Str::plural($this->resource) . '.index')->with('status', 'Updated.');
     }
 

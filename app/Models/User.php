@@ -36,6 +36,11 @@ class User extends Authenticatable
         return $this->hasMany(Booking::class);
     }
 
+    public function deviceTokens()
+    {
+        return $this->hasMany(DeviceToken::class);
+    }
+
     public function blogPosts()
     {
         return $this->hasMany(BlogPost::class, 'author_id');

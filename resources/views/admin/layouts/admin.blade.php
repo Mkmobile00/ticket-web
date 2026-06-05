@@ -7,6 +7,7 @@
     <title>@yield('title', 'Admin') &middot; {{ config('app.name', 'Boleto') }}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
     <style>
         body { background:#f5f6fa; min-height:100vh; }
         .admin-sidebar { width:240px; height:100vh; overflow-y:auto; background:#1f2329; color:#cfd2d6; position:fixed; top:0; left:0; padding:0; scrollbar-width:thin; scrollbar-color:#3a4049 #1f2329; }
@@ -28,6 +29,9 @@
             .admin-sidebar { width:100%; height:auto; max-height:none; position:relative; overflow-y:visible; }
             .admin-content { margin-left:0; }
         }
+        /* Keep searchable dropdowns from collapsing to a tiny width in filter bars. */
+        .ts-wrapper { min-width: 160px; }
+        .ts-wrapper .ts-control { min-height: 38px; }
     </style>
     @stack('styles')
 </head>
@@ -46,6 +50,7 @@
                 ['Languages', 'admin.languages.index', 'translate'],
                 ['Formats', 'admin.formats.index', 'aspect-ratio'],
                 ['Genres', 'admin.genres.index', 'bookmark-star'],
+                ['Cast & Crew', 'admin.cast-members.index', 'people-fill'],
                 ['Promo Codes', 'admin.promo-codes.index', 'percent'],
                 ['Popcorn', 'admin.popcorn-items.index', 'cup-straw'],
             ],
@@ -73,6 +78,7 @@
                 ['Partners', 'admin.partners.index', 'handshake'],
                 ['Contact Messages', 'admin.contact-messages.index', 'envelope'],
                 ['Newsletter', 'admin.newsletter.index', 'mailbox'],
+                ['Push Notifications', 'admin.notifications.index', 'bell'],
                 ['Settings', 'admin.settings.index', 'gear'],
             ],
             'Media' => [
@@ -125,6 +131,23 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <script>
+        // Make every admin dropdown searchable. Skips the "add new" pickers
+        // (which have their own toggle JS) and any <select data-no-ts>.
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof TomSelect === 'undefined') return;
+            document.querySelectorAll('select:not(.picker):not([data-no-ts]):not([multiple])').forEach(function (el) {
+                if (el.tomselect) return;
+                new TomSelect(el, {
+                    allowEmptyOption: true,
+                    maxOptions: 2000,
+                    create: false,
+                    placeholder: el.querySelector('option')?.textContent || 'Select…',
+                });
+            });
+        });
+    </script>
     @stack('scripts')
 </body>
 </html>

@@ -72,6 +72,8 @@ class CatalogApiController extends Controller
             'synopsis' => $movie->synopsis,
             'banner_image' => $this->img($movie->banner_image),
             'trailer_url' => $movie->trailer_url,
+            'trailer_embed_url' => $movie->trailer_embed_url,
+            'trailer_thumb_url' => $movie->trailer_thumb_url,
             'cast' => $movie->cast->map(fn ($c) => [
                 'name' => $c->name,
                 'character' => $c->pivot->character_name ?? null,
@@ -148,6 +150,7 @@ class CatalogApiController extends Controller
         return response()->json(['data' => [
             'id' => $event->id, 'title' => $event->title, 'slug' => $event->slug,
             'description' => $event->description, 'banner_image' => $this->img($event->banner_image),
+            'trailer_embed_url' => $event->trailer_embed_url,
             'date' => optional($event->event_date)->toDateString(),
             'start_time' => $event->start_time, 'venue' => $event->address, 'organizer' => $event->organizer,
             'tiers' => $event->seatTiers(),
@@ -178,6 +181,7 @@ class CatalogApiController extends Controller
             'id' => $sport->id, 'title' => $sport->title, 'slug' => $sport->slug,
             'matchup' => $sport->team_home && $sport->team_away ? $sport->team_home . ' vs ' . $sport->team_away : $sport->title,
             'description' => $sport->description, 'banner_image' => $this->img($sport->banner_image),
+            'trailer_embed_url' => $sport->trailer_embed_url,
             'date' => optional($sport->sport_date)->toDateString(),
             'start_time' => $sport->start_time, 'venue' => $sport->venue, 'city' => $sport->city->name ?? null,
             'tiers' => $sport->seatTiers(),

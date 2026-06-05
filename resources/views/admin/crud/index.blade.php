@@ -91,6 +91,7 @@
                         <td class="text-end">
                             @if ($resource === 'movie')
                                 <a class="btn btn-sm btn-outline-info" href="{{ route('admin.movies.playing', $item->id) }}" title="Cinemas / screens / showtimes / ticket classes"><i class="bi bi-diagram-3"></i> Schedule</a>
+                                <a class="btn btn-sm btn-outline-secondary" href="{{ route('admin.movies.cast', $item->id) }}" title="Cast &amp; crew"><i class="bi bi-people-fill"></i> Cast</a>
                             @endif
                             @if ($resource === 'showtime')
                                 <a class="btn btn-sm btn-outline-success" href="{{ route('admin.showtimes.pricing', $item->id) }}" title="Set seat prices per row"><i class="bi bi-currency-dollar"></i> Prices</a>

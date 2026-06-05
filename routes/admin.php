@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\BlogCommentController;
 use App\Http\Controllers\Admin\BlogPostController;
 use App\Http\Controllers\Admin\BlogTagController;
 use App\Http\Controllers\Admin\BookingController as AdminBookingController;
+use App\Http\Controllers\Admin\CastMemberController;
 use App\Http\Controllers\Admin\CinemaController;
 use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\ContactMessageController;
@@ -37,6 +38,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('movies', AdminMovieController::class);
     // Drill-down: which cinemas / screens / showtimes / ticket classes a movie plays in.
     Route::get('movies/{movie}/playing', [AdminMovieController::class, 'playing'])->name('movies.playing');
+    // Cast & crew per movie (select existing members + role/character)
+    Route::get('movies/{movie}/cast', [AdminMovieController::class, 'cast'])->name('movies.cast');
+    Route::post('movies/{movie}/cast', [AdminMovieController::class, 'attachCast'])->name('movies.cast.attach');
+    Route::delete('movies/{movie}/cast/{castMember}', [AdminMovieController::class, 'detachCast'])->name('movies.cast.detach');
+    Route::resource('cast-members', CastMemberController::class);
     Route::resource('cinemas', CinemaController::class);
     Route::resource('screens', ScreenController::class);
     Route::resource('showtimes', ShowtimeController::class);
@@ -72,6 +78,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('banners', BannerController::class);
     Route::resource('faqs', FaqController::class);
     Route::resource('partners', PartnerController::class);
+
+    Route::get('notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('notifications', [\App\Http\Controllers\Admin\NotificationController::class, 'send'])->name('notifications.send');
 
     Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
     Route::post('settings', [SettingController::class, 'update'])->name('settings.update');

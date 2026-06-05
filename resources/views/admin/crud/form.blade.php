@@ -125,6 +125,21 @@
                                 <option value="{{ $optVal }}" @selected((string) $value === (string) $optVal)>{{ $optLabel }}</option>
                             @endforeach
                         </select>
+                    @elseif ($type === 'multiselect')
+                        @php
+                            $selected = array_map('strval', (array) old($name, $field['selected'] ?? []));
+                        @endphp
+                        <div class="row-picker">
+                            @foreach ($field['options'] ?? [] as $optVal => $optLabel)
+                                <label class="row-chip">
+                                    <input type="checkbox" name="{{ $name }}[]" value="{{ $optVal }}" @checked(in_array((string) $optVal, $selected, true))>
+                                    <span style="width:auto;min-width:42px;padding:0 14px">{{ $optLabel }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                        @if (empty($field['options']))
+                            <div class="row-picker-help">None available.</div>
+                        @endif
                     @elseif ($type === 'checkbox')
                         <div><input type="checkbox" name="{{ $name }}" value="1" @checked($value)></div>
                     @elseif ($type === 'image')

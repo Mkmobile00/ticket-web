@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Events\BookingConfirmed;
 use App\Mail\BookingConfirmedMail;
+use App\Services\FcmService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -38,5 +39,33 @@ class SendBookingConfirmationNotification
             'to' => $booking->user?->phone,
             'text' => "Booking #{$booking->id} confirmed. {$detail}. Show your QR at entry.",
         ]);
+
+        // 3) Push notification (FCM) — no-op until a service account is configured.
+        try {
+            if ($booking->user) {
+                $movie = $booking->showtime?->movie;
+                $what = $movie?->title ?? ($booking->bookable?->title ?? 'your booking');
+                $poster = $this->posterUrl($movie?->poster_image ?? $booking->bookable?->banner_image ?? null);
+                app(FcmService::class)->sendToUser(
+                    $booking->user,
+                    'Booking confirmed 🎟️',
+                    "Your tickets for {$what} are confirmed. {$detail}.",
+                    ['type' => 'booking', 'booking_id' => $booking->id],
+                    $poster,
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Booking push failed', ['booking' => $booking->id, 'error' => $e->getMessage()]);
+        }
+    }
+
+    /** Resolve a stored image path to an absolute URL FCM/the device can fetch. */
+    private function posterUrl(?string $path): ?string
+    {
+        if (! $path) return null;
+        if (str_starts_with($path, 'http')) return $path;
+        return str_starts_with($path, 'assets/')
+            ? asset($path)
+            : asset('storage/' . ltrim($path, '/'));
     }
 }

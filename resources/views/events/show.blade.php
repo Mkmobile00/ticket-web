@@ -5,10 +5,12 @@
     <section class="event-banner-section bg_img" data-background="{{ asset('assets/images/banner/banner06.jpg') }}">
         <div class="container">
             <div class="event-banner">
-                <a href="https://www.youtube.com/embed/GT6-H4BRyqQ" class="video-popup">
-                    <span></span>
-                    <i class="flaticon-play-button"></i>
-                </a>
+                @if ($event->trailer_embed_url)
+                    <a href="{{ $event->trailer_embed_url }}" class="video-popup">
+                        <span></span>
+                        <i class="flaticon-play-button"></i>
+                    </a>
+                @endif
             </div>
         </div>
     </section>

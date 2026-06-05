@@ -4,6 +4,7 @@
     <div class="city-modal-box">
         <button type="button" class="city-modal-close" onclick="closeCityModal()" aria-label="Close">&times;</button>
 
+        <h4 class="city-modal-heading">Select your city</h4>
         <div class="city-modal-search">
             <i class="fas fa-search"></i>
             <input type="text" id="city-search" placeholder="Search for your city" autocomplete="off">
@@ -35,13 +36,18 @@
     .city-modal.open{display:block;}
     .city-modal-overlay{position:absolute;inset:0;background:rgba(6,10,24,.7);backdrop-filter:blur(2px);}
     .city-modal-box{position:relative;max-width:760px;margin:7vh auto 0;background:#0f1733;border:1px solid #243056;
-        border-radius:14px;padding:26px 28px 30px;box-shadow:0 24px 60px rgba(0,0,0,.5);}
-    .city-modal-close{position:absolute;top:14px;right:16px;background:none;border:0;color:#9aa3c2;font-size:26px;line-height:1;cursor:pointer;}
-    .city-modal-close:hover{color:#fff;}
-    .city-modal-search{display:flex;align-items:center;gap:10px;background:#1b2547;border:1px solid #2c3a66;border-radius:10px;padding:12px 16px;margin-bottom:22px;}
-    .city-modal-search i{color:#8b95b5;}
-    .city-modal-search input{flex:1;background:transparent;border:0;outline:0;color:#fff;font-size:15px;}
-    .city-modal-title{text-align:center;color:#cfd4db;font-size:15px;margin:0 0 18px;font-weight:600;}
+        border-radius:16px;padding:30px 30px 32px;box-shadow:0 24px 60px rgba(0,0,0,.5);}
+    .city-modal-heading{text-align:center;color:#fff;font-size:19px;font-weight:700;margin:0 0 18px;}
+    .city-modal-close{position:absolute;top:16px;right:18px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+        background:#1b2547;border:1px solid #2c3a66;border-radius:50%;color:#9aa3c2;font-size:20px;line-height:1;cursor:pointer;transition:all .15s;}
+    .city-modal-close:hover{color:#fff;background:#283457;border-color:#3a4a7a;}
+    .city-modal-search{display:flex;align-items:center;gap:12px;max-width:540px;margin:0 auto 26px;
+        background:#161f3d;border:1.5px solid #2c3a66;border-radius:12px;padding:14px 18px;transition:border-color .15s,box-shadow .15s;}
+    .city-modal-search:focus-within{border-color:#ff5046;box-shadow:0 0 0 3px rgba(255,80,70,.16);}
+    .city-modal-search i{color:#ff7a4d;font-size:16px;}
+    .city-modal-search input{flex:1;background:transparent;border:0;outline:0;color:#fff;font-size:15.5px;}
+    .city-modal-search input::placeholder{color:#8b95b5;}
+    .city-modal-title{text-align:left;color:#8b95b5;font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 16px;font-weight:700;}
     .city-modal-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
     .city-modal-item{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 6px;border-radius:10px;
         color:#cfd4db;text-decoration:none;transition:background .15s,transform .1s;border:1px solid transparent;}

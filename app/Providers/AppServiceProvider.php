@@ -37,7 +37,7 @@ class AppServiceProvider extends ServiceProvider
         // Rate limiters (BookMyShow "Security" section), per-user where logged in.
         RateLimiter::for('seat-lock', fn (Request $r) => Limit::perMinute(10)->by($r->user()?->id ?: $r->ip()));
         RateLimiter::for('payments', fn (Request $r) => Limit::perMinute(5)->by($r->user()?->id ?: $r->ip()));
-        RateLimiter::for('login', fn (Request $r) => Limit::perMinutes(10, 5)->by($r->ip()));
+        RateLimiter::for('login', fn (Request $r) => Limit::perMinute(20)->by($r->ip()));
 
         // Make the city list + currently-selected city available to the header
         // and showtime pages (the BookMyShow-style city selector).

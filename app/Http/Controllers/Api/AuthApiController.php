@@ -133,8 +133,12 @@ class AuthApiController extends Controller
 
         $user = User::firstOrCreate(
             ['email' => $g['email']],
-            ['name' => $g['name'] ?? $g['email'], 'password' => Hash::make(Str::random(32)), 'role' => 'customer', 'email_verified_at' => now()]
+            ['name' => $g['name'] ?? $g['email'], 'password' => Hash::make(Str::random(32)), 'role' => 'customer']
         );
+        // Google accounts are pre-verified; persist it (not in $fillable).
+        if (! $user->email_verified_at) {
+            $user->forceFill(['email_verified_at' => now()])->save();
+        }
 
         return response()->json([
             'user' => $this->userPayload($user),
@@ -163,7 +167,8 @@ class AuthApiController extends Controller
         if (! $cached || $cached !== $request->code) {
             return response()->json(['message' => 'Invalid or expired code.', 'errors' => ['code' => ['Invalid code.']]], 422);
         }
-        $request->user()->update(['email_verified_at' => now()]);
+        // forceFill: email_verified_at is not in the model's $fillable.
+        $request->user()->forceFill(['email_verified_at' => now()])->save();
         cache()->forget('email_verify:' . $request->user()->id);
         return response()->json(['message' => 'Email verified.']);
     }

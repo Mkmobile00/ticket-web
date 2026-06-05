@@ -16,7 +16,41 @@ use App\Http\Controllers\SpeakerController;
 use App\Http\Controllers\SportController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [HomeController::class, 'index'])->name('home');
+// Home + booking-flow now serve the custom BOLETO design (resources/design/*.html)
+// with live catalog data injected into window.BOLETO_DATA from the database.
+// Original dynamic home is still available via HomeController if needed.
+Route::get('/', [\App\Http\Controllers\DesignController::class, 'page'])->name('home');
+
+$designPages = 'index|movie|showtimes|seats|checkout|event|event-seats|event-checkout|sign-in|account|search';
+
+// Clean URLs: /movie, /showtimes, /seats, /checkout, /event, ...
+Route::get('/{page}', [\App\Http\Controllers\DesignController::class, 'page'])
+    ->where('page', $designPages)
+    ->name('design.page');
+
+// Back-compat: old *.html links 301 to the clean URL.
+Route::get('/{page}.html', fn (string $page) => redirect($page === 'index' ? '/' : '/' . $page, 301))
+    ->where('page', $designPages);
+
+// Design booking flow (CSRF-exempt) — real seat map + booking + payment, attributed to the logged-in customer.
+Route::get('/design-api/showtimes/{movie:slug}', [\App\Http\Controllers\DesignBookingController::class, 'showtimes']);
+Route::get('/design-api/seats/{type}/{id}', [\App\Http\Controllers\DesignBookingController::class, 'seats'])
+    ->where('type', 'showtime|event|sport')->where('id', '[0-9]+');
+Route::post('/design-api/checkout', [\App\Http\Controllers\DesignBookingController::class, 'checkout']);
+Route::get('/design-api/my-bookings', [\App\Http\Controllers\DesignBookingController::class, 'myBookings']);
+Route::get('/design-api/popcorn', [\App\Http\Controllers\DesignBookingController::class, 'popcorn']);
+Route::post('/design-api/promo', [\App\Http\Controllers\DesignBookingController::class, 'promo']);
+Route::get('/design-api/city', [\App\Http\Controllers\DesignController::class, 'setCity']);
+Route::get('/design-api/search', [\App\Http\Controllers\DesignController::class, 'search']);
+
+// Customer auth for the design (session-based, CSRF-exempt).
+Route::post('/design-api/login', [\App\Http\Controllers\DesignAuthController::class, 'login']);
+Route::post('/design-api/register', [\App\Http\Controllers\DesignAuthController::class, 'register']);
+Route::post('/design-api/logout', [\App\Http\Controllers\DesignAuthController::class, 'logout']);
+Route::get('/design-api/profile', [\App\Http\Controllers\DesignAuthController::class, 'profile']);
+Route::post('/design-api/profile', [\App\Http\Controllers\DesignAuthController::class, 'updateProfile']);
+Route::post('/design-api/profile/password', [\App\Http\Controllers\DesignAuthController::class, 'updatePassword']);
+Route::post('/design-api/bookings/{booking}/cancel', [\App\Http\Controllers\DesignBookingController::class, 'cancel']);
 
 // City selector (BookMyShow-style) — remembers the visitor's city in the session.
 Route::get('/city/{city:slug}', function (\App\Models\City $city) {
@@ -112,11 +146,11 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'register']);
-
-    // Admin (separate page)
-    Route::get('/admin/login', [AuthController::class, 'showAdminLogin'])->name('admin.login');
-    Route::post('/admin/login', [AuthController::class, 'adminLogin'])->middleware('throttle:login');
 });
+
+// Admin login — reachable even while signed in as a customer, so you can switch accounts.
+Route::get('/admin/login', [AuthController::class, 'showAdminLogin'])->name('admin.login');
+Route::post('/admin/login', [AuthController::class, 'adminLogin'])->middleware('throttle:login');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 // Admin (loaded from separate file)

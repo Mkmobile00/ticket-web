@@ -19,8 +19,8 @@
             <div class="details-banner-wrapper">
                 <div class="details-banner-thumb">
                     <img src="{{ $posterImg }}" alt="{{ $movie->title }}">
-                    @if ($movie->trailer_url)
-                        <a href="{{ $movie->trailer_url }}" class="video-popup">
+                    @if ($movie->trailer_embed_url)
+                        <a href="{{ $movie->trailer_embed_url }}" class="video-popup">
                             <img src="{{ asset('assets/images/movie/video-button.png') }}" alt="play trailer">
                         </a>
                     @endif
@@ -35,6 +35,13 @@
                     @foreach ($movie->genres as $genre)
                         <a href="#0" class="button">{{ $genre->name }}</a>
                     @endforeach
+                    @if ($movie->trailer_embed_url)
+                        <div class="trailer-cta">
+                            <a href="{{ $movie->trailer_embed_url }}" class="video-popup watch-trailer-btn">
+                                <i class="fas fa-play"></i> Watch Trailer
+                            </a>
+                        </div>
+                    @endif
                     <div class="social-and-duration">
                         <div class="duration-area">
                             @if ($movie->release_date)
@@ -508,4 +515,19 @@
     </section>
     <!-- ==========Movie-Section========== -->
 @endsection
+
+@push('styles')
+<style>
+    .trailer-cta { margin: 14px 0 4px; }
+    .watch-trailer-btn {
+        display: inline-flex; align-items: center; gap: 9px;
+        padding: 11px 24px; border-radius: 6px;
+        background: linear-gradient(90deg, #ff5046, #ff8a3d); color: #fff;
+        font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: .03em;
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .watch-trailer-btn:hover { color: #fff; transform: translateY(-2px); box-shadow: 0 10px 24px rgba(255,80,70,.4); }
+    .watch-trailer-btn i { font-size: 12px; }
+</style>
+@endpush
 

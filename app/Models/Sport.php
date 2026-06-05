@@ -2,16 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasYoutubeTrailer;
 use App\Models\Concerns\Seatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Sport extends Model
 {
-    use HasFactory, Seatable;
+    use HasFactory, HasYoutubeTrailer, Seatable;
 
     protected $fillable = [
-        'title', 'slug', 'description', 'banner_image', 'team_home', 'team_away',
+        'title', 'slug', 'description', 'banner_image', 'trailer_url', 'team_home', 'team_away',
         'sport_date', 'start_time', 'venue', 'city_id', 'status', 'seat_layout'
     ];
 
