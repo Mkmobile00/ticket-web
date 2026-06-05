@@ -222,34 +222,52 @@ class DesignController extends Controller
     }
 
     /**
-     * Per-event detail for the event page (mirrors movieDetail()). Overrides the
-     * static window.BOLETO_DATA.eventInfo with real data: the countdown targets
-     * the event's actual date, the intro is its description, and speakers / stats
-     * come from the DB. Sections with no data are returned empty so the page can
-     * hide them instead of showing placeholders.
+     * Per-item detail for the event page (mirrors movieDetail()). The event page
+     * serves BOTH events and sports, so this resolves the slug to either and
+     * overrides the static window.BOLETO_DATA.eventInfo with real data: the
+     * countdown targets the actual date/time, the intro is its description, and
+     * speakers / stats come from the DB (events only). Sections with no data are
+     * returned empty so the page can hide them instead of showing placeholders.
      */
     private function eventDetail(?string $slug): array
     {
-        $base = fn () => Event::with(['speakers', 'stats', 'city']);
-        // No slug (direct /event visit) -> first upcoming event, matching the
-        // client-side getEvent() fallback to D.events[0].
-        $event = $slug
-            ? ($base()->where('slug', $slug)->first() ?: $base()->get()->first(fn ($e) => Str::slug($e->title) === $slug))
-            : $base()->orderBy('event_date')->first();
-        if (!$event) return [];
+        $eventBase = fn () => Event::with(['speakers', 'stats', 'city']);
+        $sportBase = fn () => Sport::with(['city']);
 
-        $date  = $event->event_date instanceof Carbon ? $event->event_date
-            : ($event->event_date ? Carbon::parse($event->event_date) : null);
-        $start = $event->start_time ? Carbon::parse($event->start_time) : null;
+        // Resolve to an event first, then a sport. No slug (direct /event visit)
+        // -> first upcoming event, matching the client-side getEvent() fallback.
+        $isSport = false;
+        if ($slug) {
+            $item = $eventBase()->where('slug', $slug)->first()
+                ?: $eventBase()->get()->first(fn ($e) => Str::slug($e->title) === $slug);
+            if (!$item) {
+                $item = $sportBase()->where('slug', $slug)->first()
+                    ?: $sportBase()->get()->first(fn ($s) => Str::slug($s->title) === $slug);
+                $isSport = (bool) $item;
+            }
+        } else {
+            $item = $eventBase()->orderBy('event_date')->first();
+        }
+        if (!$item) return [];
+
+        $rawDate = $isSport ? $item->sport_date : $item->event_date;
+        $date  = $rawDate instanceof Carbon ? $rawDate : ($rawDate ? Carbon::parse($rawDate) : null);
+        $start = $item->start_time ? Carbon::parse($item->start_time) : null;
         $countdown = $date
             ? $date->copy()->setTimeFrom($start ?: Carbon::createFromTime(9, 0))->format('Y-m-d\TH:i:s')
             : null;
 
-        // Intro paragraphs from the description (split on blank lines).
-        $intro = collect(preg_split('/\R{2,}/', trim((string) $event->description)))
+        // Intro paragraphs from the description (split on blank lines). For a
+        // sport, fall back to "Home vs Away".
+        $description = (string) $item->description;
+        if ($isSport && trim($description) === '' && $item->team_home && $item->team_away) {
+            $description = $item->team_home . ' vs ' . $item->team_away;
+        }
+        $intro = collect(preg_split('/\R{2,}/', trim($description)))
             ->map(fn ($p) => trim($p))->filter()->values()->all();
 
-        $speakers = $event->speakers->map(fn ($s) => [
+        // Speakers + stats are an events-only concept.
+        $speakers = $isSport ? [] : $item->speakers->map(fn ($s) => [
             'name'  => $s->name,
             'role'  => $s->designation ?: 'Speaker',
             'photo' => $this->img($s->photo),
@@ -257,7 +275,7 @@ class DesignController extends Controller
         ])->all();
 
         $statIcons = ['ticket', 'cal', 'mic', 'star', 'users'];
-        $stats = $event->stats->values()->map(fn ($s, $i) => [
+        $stats = $isSport ? [] : $item->stats->values()->map(fn ($s, $i) => [
             'ico' => $statIcons[$i % count($statIcons)],
             'n'   => (string) $s->value,
             'l'   => (string) $s->label,
@@ -271,16 +289,21 @@ class DesignController extends Controller
         $email = optional(Setting::where('key', 'contact_email')->first())->value
             ?: (config('mail.from.address') ?: 'hello@boleto.com');
 
+        $venue = $isSport
+            ? ($item->venue ?: ($item->city->name ?? ''))
+            : ($item->address ?: ($item->city->name ?? ''));
+
         return ['eventInfo' => [
             'countdownTo' => $countdown ?: '',
             'dateLabel'   => $date ? $date->format('D, d M Y') : 'Date to be announced',
             'timeLabel'   => $start ? $start->format('g:i A') . ' onwards' : 'Doors open soon',
-            'venue'       => $event->address ?: ($event->city->name ?? ''),
-            'organizer'   => (string) $event->organizer,
+            'time'        => $start ? $start->format('g:i A') : 'TBA',
+            'venue'       => $venue,
+            'organizer'   => (string) ($isSport ? '' : $item->organizer),
             'email'       => $email,
-            'ready'       => 'Are you ready to attend?',
-            'intro'       => $intro ?: ['More details about this event will be announced soon.'],
-            'galleryCount' => 0, // no per-event gallery in the DB — hide the gallery strip
+            'ready'       => $isSport ? 'Are you ready for kick-off?' : 'Are you ready to attend?',
+            'intro'       => $intro ?: ['More details will be announced soon.'],
+            'galleryCount' => 0, // no per-item gallery in the DB — hide the gallery strip
             'speakers'    => $speakers,
             'stats'       => $stats,
             'faq'         => $faq,
