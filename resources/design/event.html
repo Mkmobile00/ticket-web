@@ -1547,6 +1547,7 @@ function EventPage() {
   const info = D.eventInfo;
   const [faqOpen, setFaqOpen] = e_us(1);
   const [sponTab, setSponTab] = e_us(0);
+  const [trailer, setTrailer] = e_us(null);
 
   const book = () => { saveBooking({ slug: slugify(ev.title), title: ev.title, venue: ev.venue || ev.addr1, kind: sport ? "sport" : "event" }); go("/event-seats?e=" + slugify(ev.title)); };
   const heroImg = sport ? "stadium-football-crowd-floodlights" : "conference-stage-audience-lights";
@@ -1559,7 +1560,7 @@ function EventPage() {
         <img className="ev-hero-bg" src={ev.image || img(heroImg, 1600, 520)} alt="" />
         <div className="ev-hero-veil" />
         <div className="wrap ev-hero-in">
-          <div className="ev-play" onClick={() => flash(sport ? "Playing match highlights" : "Playing event trailer")}><Icon n="play" s={26} /></div>
+          <div className="ev-play" onClick={() => { if (info.trailer) setTrailer(info.trailer); else flash(sport ? "No highlights available yet" : "No trailer available yet"); }}><Icon n="play" s={26} /></div>
           <div className="ev-cd-card">
             <div className="ev-cd-title">{ev.title}</div>
             <Countdown to={info.countdownTo} />
@@ -1682,7 +1683,21 @@ function EventPage() {
           </div>
         </section>
       )}
+
+      {trailer && <TrailerModal url={trailer} onClose={() => setTrailer(null)} />}
     </PageShell>
+  );
+}
+
+function TrailerModal({ url, onClose }) {
+  const src = url + (url.indexOf("?") >= 0 ? "&" : "?") + "autoplay=1";
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.88)", zIndex: 9999, display: "grid", placeItems: "center", padding: "20px" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(960px, 94vw)", aspectRatio: "16 / 9" }}>
+        <button onClick={onClose} aria-label="Close" style={{ position: "absolute", top: -42, right: 0, color: "#fff", fontSize: 30, lineHeight: 1, background: "none", border: "none", cursor: "pointer" }}>&times;</button>
+        <iframe src={src} title="Trailer" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen style={{ width: "100%", height: "100%", border: 0, borderRadius: 12 }} />
+      </div>
+    </div>
   );
 }
 

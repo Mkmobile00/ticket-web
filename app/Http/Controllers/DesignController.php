@@ -242,6 +242,7 @@ class DesignController extends Controller
         if ($cast) $out['cast'] = $cast;
         if ($crew) $out['crew'] = $crew;
         if ($gallery) $out['gallery'] = $gallery;
+        if ($movie->trailer_embed_url) $out['trailer'] = $movie->trailer_embed_url;
         return $out;
     }
 
@@ -323,6 +324,7 @@ class DesignController extends Controller
             'timeLabel'   => $start ? $start->format('g:i A') . ' onwards' : 'Doors open soon',
             'time'        => $start ? $start->format('g:i A') : 'TBA',
             'venue'       => $venue,
+            'trailer'     => (string) ($item->trailer_embed_url ?: ''),
             'organizer'   => (string) ($isSport ? '' : $item->organizer),
             'email'       => $email,
             'ready'       => $isSport ? 'Are you ready for kick-off?' : 'Are you ready to attend?',

@@ -1321,6 +1321,7 @@ function DetailPage() {
   const [fmt, setFmt] = d_us(m.formats[0]);
   const [tab, setTab] = d_us("summary");
   const [myRate, setMyRate] = d_us(0);
+  const [trailer, setTrailer] = d_us(null);
 
   const book = () => { saveBooking({ slug: slugify(m.title), title: m.title, format: fmt, lang: m.langs[0] }); go("/showtimes?m=" + slugify(m.title)); };
 
@@ -1347,6 +1348,11 @@ function DetailPage() {
               <span><Icon n="film" s={16} /> {Math.floor(m.runtime / 60)} hrs {m.runtime % 60} mins</span>
             </div>
             <div className="dh-social"><a><Icon n="fb" s={18} /></a><a><Icon n="tw" s={18} /></a><a><Icon n="ig" s={18} /></a><a><Icon n="yt" s={18} /></a></div>
+            {D.trailer ? (
+              <button className="btn-cta" onClick={() => setTrailer(D.trailer)} style={{ marginTop: 18, display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <Icon n="play" s={16} /> Watch Trailer
+              </button>
+            ) : null}
           </div>
         </div>
       </section>
@@ -1441,7 +1447,21 @@ function DetailPage() {
           </div>
         </div>
       </section>
+
+      {trailer && <TrailerModal url={trailer} onClose={() => setTrailer(null)} />}
     </PageShell>
+  );
+}
+
+function TrailerModal({ url, onClose }) {
+  const src = url + (url.indexOf("?") >= 0 ? "&" : "?") + "autoplay=1";
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.88)", zIndex: 9999, display: "grid", placeItems: "center", padding: "20px" }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", width: "min(960px, 94vw)", aspectRatio: "16 / 9" }}>
+        <button onClick={onClose} aria-label="Close" style={{ position: "absolute", top: -42, right: 0, color: "#fff", fontSize: 30, lineHeight: 1, background: "none", border: "none", cursor: "pointer" }}>&times;</button>
+        <iframe src={src} title="Trailer" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen style={{ width: "100%", height: "100%", border: 0, borderRadius: 12 }} />
+      </div>
+    </div>
   );
 }
 
