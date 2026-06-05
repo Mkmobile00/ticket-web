@@ -1050,13 +1050,25 @@ function App() {
 
       <section className="section" style={{ paddingTop: 32 }}>
         <div className="wrap">
-          <SecHead title={listTitle} />
-          {listData.length === 0 ? (
-            <p style={{ color: "var(--ink-2)", padding: "30px 0" }}>Nothing here yet — check back soon.</p>
-          ) : listType === "movie" ? (
-            <div className="grid3">{listData.map((m, i) => <MovieCard key={i} m={m} onOpen={(mm) => { location.href = "/movie?m=" + slugify(mm.title); }} />)}</div>
+          {listType === "movie" ? (
+            /* Movies — same sidebar + grid layout as the home Movies section */
+            <div className="movies-grid">
+              <Sidebar D={D} onToast={toastMsg} onOpenTrend={openTrend} />
+              <div className="movies-main">
+                <SecHead title={listTitle} />
+                {listData.length === 0
+                  ? <p style={{ color: "var(--ink-2)", padding: "30px 0" }}>Nothing here yet — check back soon.</p>
+                  : <div className="grid3">{listData.map((m, i) => <MovieCard key={i} m={m} onOpen={(mm) => { location.href = "/movie?m=" + slugify(mm.title); }} />)}</div>}
+              </div>
+            </div>
           ) : (
-            <div className="grid3-e">{listData.map((e, i) => <EventCard key={i} e={e} onOpen={(ev) => { location.href = "/event?e=" + slugify(ev.title); }} />)}</div>
+            /* Events / Sports — full-width grid, same as the home sections */
+            <React.Fragment>
+              <SecHead title={listTitle} />
+              {listData.length === 0
+                ? <p style={{ color: "var(--ink-2)", padding: "30px 0" }}>Nothing here yet — check back soon.</p>
+                : <div className="grid3-e">{listData.map((e, i) => <EventCard key={i} e={e} onOpen={(ev) => { location.href = "/event?e=" + slugify(ev.title); }} />)}</div>}
+            </React.Fragment>
           )}
         </div>
       </section>
