@@ -360,6 +360,7 @@ class DesignController extends Controller
                     'kind'   => 'sport',
                     'title'  => $s->title,
                     'image'  => $this->img($s->banner_image),
+                    'detail' => $this->img($s->detail_image),
                     'venue'  => $s->venue . ($s->city ? ', ' . $s->city->name : ''),
                     'day'    => $d->format('d'),
                     'mon'    => $d->format('M'),

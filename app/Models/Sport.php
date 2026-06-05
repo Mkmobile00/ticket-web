@@ -12,7 +12,7 @@ class Sport extends Model
     use HasFactory, HasYoutubeTrailer, Seatable;
 
     protected $fillable = [
-        'title', 'slug', 'description', 'banner_image', 'trailer_url', 'team_home', 'team_away',
+        'title', 'slug', 'description', 'banner_image', 'detail_image', 'trailer_url', 'team_home', 'team_away',
         'sport_date', 'start_time', 'venue', 'city_id', 'status', 'seat_layout'
     ];
 
