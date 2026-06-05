@@ -62,8 +62,8 @@ Route::get('/city-clear/all', function () {
     return back();
 })->name('city.clear');
 
-// Movies
-Route::get('/movies', [MovieController::class, 'index'])->name('movies.index');
+// Movies — "view all" listing now uses the BOLETO design (list.html).
+Route::get('/movies', fn (\Illuminate\Http\Request $r) => app(\App\Http\Controllers\DesignController::class)->page($r, 'list'))->name('movies.index');
 Route::get('/movies/{movie:slug}', [MovieController::class, 'show'])->name('movies.show');
 Route::get('/movies/{movie:slug}/showtimes', [MovieController::class, 'showtimes'])->name('movies.showtimes');
 
@@ -88,8 +88,8 @@ Route::prefix('api')->name('api.')->group(function () {
     });
 });
 
-// Events
-Route::get('/events', [EventController::class, 'index'])->name('events.index');
+// Events — "view all" listing now uses the BOLETO design (list.html).
+Route::get('/events', fn (\Illuminate\Http\Request $r) => app(\App\Http\Controllers\DesignController::class)->page($r, 'list'))->name('events.index');
 Route::get('/events/{event:slug}', [EventController::class, 'show'])->name('events.show');
 Route::get('/events/{event:slug}/tickets', [EventController::class, 'tickets'])->name('events.tickets');
 Route::post('/events/{event:slug}/tickets', [EventController::class, 'storeTickets'])->name('events.tickets.store')->middleware('auth');
@@ -97,8 +97,8 @@ Route::post('/events/{event:slug}/tickets', [EventController::class, 'storeTicke
 // Speakers
 Route::get('/speakers/{speaker}', [SpeakerController::class, 'show'])->name('speakers.show');
 
-// Sports
-Route::get('/sports', [SportController::class, 'index'])->name('sports.index');
+// Sports — "view all" listing now uses the BOLETO design (list.html).
+Route::get('/sports', fn (\Illuminate\Http\Request $r) => app(\App\Http\Controllers\DesignController::class)->page($r, 'list'))->name('sports.index');
 Route::get('/sports/{sport:slug}', [SportController::class, 'show'])->name('sports.show');
 Route::get('/sports/{sport:slug}/tickets', [SportController::class, 'tickets'])->name('sports.tickets');
 Route::post('/sports/{sport:slug}/tickets', [SportController::class, 'storeTickets'])->name('sports.tickets.store')->middleware('auth');

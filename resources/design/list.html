@@ -1019,6 +1019,12 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
   const D = window.BOLETO_DATA;
+  // "View all" listing — the catalog shown is derived from the URL path
+  // (/movies, /events, /sports).
+  const _path = location.pathname;
+  const listType = _path.indexOf("movies") >= 0 ? "movie" : (_path.indexOf("sports") >= 0 ? "sport" : "event");
+  const listData = listType === "movie" ? D.movies : (listType === "sport" ? D.sports : D.events);
+  const listTitle = listType === "movie" ? "All Movies" : (listType === "sport" ? "All Sports" : "All Events");
   const [city, setCity] = us(window.BOLETO_DATA.selectedCity || D.cities[0]);
   const [modal, setModal] = us(null);
   const [toast, setToast] = us(null);
@@ -1041,32 +1047,17 @@ function App() {
   return (
     <div id="top" className={"app" + (t.dark ? " dark" : "")} style={rootStyle}>
       <Header D={D} city={city} setCity={setCity} onToast={toastMsg} />
-      <Hero D={D} />
-      <SearchPanel D={D} />
 
-      <section className="section">
+      <section className="section" style={{ paddingTop: 32 }}>
         <div className="wrap">
-          <div className="movies-grid">
-            <Sidebar D={D} onToast={toastMsg} onOpenTrend={openTrend} />
-            <div className="movies-main">
-              <span id="movies" /><SecHead title="Movies" onAll={() => { location.href = "/movies"; }} />
-              <div className="grid3">{D.movies.map((m, i) => <MovieCard key={i} m={m} onOpen={(mm) => { location.href = "/movie?m=" + slugify(mm.title); }} />)}</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="wrap">
-          <span id="events" /><SecHead title="Events" onAll={() => { location.href = "/events"; }} />
-          <div className="grid3-e">{D.events.map((e, i) => <EventCard key={i} e={e} onOpen={(ev) => { location.href = "/event?e=" + slugify(ev.title); }} />)}</div>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="wrap">
-          <span id="sports" /><SecHead title="Sports" onAll={() => { location.href = "/sports"; }} />
-          <div className="grid3-e">{D.sports.map((e, i) => <EventCard key={i} e={e} onOpen={(ev) => { location.href = "/event?e=" + slugify(ev.title); }} />)}</div>
+          <SecHead title={listTitle} />
+          {listData.length === 0 ? (
+            <p style={{ color: "var(--ink-2)", padding: "30px 0" }}>Nothing here yet — check back soon.</p>
+          ) : listType === "movie" ? (
+            <div className="grid3">{listData.map((m, i) => <MovieCard key={i} m={m} onOpen={(mm) => { location.href = "/movie?m=" + slugify(mm.title); }} />)}</div>
+          ) : (
+            <div className="grid3-e">{listData.map((e, i) => <EventCard key={i} e={e} onOpen={(ev) => { location.href = "/event?e=" + slugify(ev.title); }} />)}</div>
+          )}
         </div>
       </section>
 

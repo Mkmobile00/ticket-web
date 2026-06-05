@@ -25,7 +25,7 @@ class DesignController extends Controller
     private const PAGES = [
         'index.html', 'movie.html', 'showtimes.html', 'seats.html', 'checkout.html',
         'event.html', 'event-seats.html', 'event-checkout.html',
-        'sign-in.html', 'account.html', 'search.html',
+        'sign-in.html', 'account.html', 'search.html', 'list.html',
     ];
 
     /** Accent tint pairs reused when the DB has no per-item colour. */
@@ -151,9 +151,9 @@ class DesignController extends Controller
 
         return [
             ['label' => 'Home', 'href' => '/', 'on' => true],
-            ['label' => 'Movies', 'href' => '/#movies', 'drop' => $drop($movies, '/movie', 'm')],
-            ['label' => 'Events', 'href' => '/#events', 'drop' => $drop($events, '/event', 'e')],
-            ['label' => 'Sports', 'href' => '/#sports', 'drop' => $drop($sports, '/event', 'e')],
+            ['label' => 'Movies', 'href' => '/movies', 'drop' => $drop($movies, '/movie', 'm')],
+            ['label' => 'Events', 'href' => '/events', 'drop' => $drop($events, '/event', 'e')],
+            ['label' => 'Sports', 'href' => '/sports', 'drop' => $drop($sports, '/event', 'e')],
             ['label' => 'My Bookings', 'href' => '/account'],
             ['label' => 'Contact', 'href' => '/#subscribe'],
         ];
