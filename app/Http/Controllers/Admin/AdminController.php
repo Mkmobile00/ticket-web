@@ -77,7 +77,23 @@ abstract class AdminController extends Controller
                 }
             }
 
-            // Status enum convenience: keep as text but show available values via DB enum if present
+            // Enum column (status, role, state, …) -> <select> of its allowed
+            // DB values instead of a free-text box.
+            $enumValues = $this->enumValues($colMeta[$col] ?? []);
+            if ($enumValues) {
+                $fields[] = [
+                    'name' => $col,
+                    'label' => ucwords(str_replace('_', ' ', $col)),
+                    'type' => 'select',
+                    'options' => collect($enumValues)
+                        ->mapWithKeys(fn ($v) => [$v => ucwords(str_replace('_', ' ', $v))])
+                        ->all(),
+                    // Nullable enums get an empty "— Select —"; required ones don't.
+                    'placeholder' => ($colMeta[$col]['nullable'] ?? false) ? '— Select —' : null,
+                ];
+                continue;
+            }
+
             $type = strtolower($colMeta[$col]['type_name'] ?? 'string');
             $fields[] = [
                 'name' => $col,
@@ -95,6 +111,21 @@ abstract class AdminController extends Controller
             ];
         }
         return $fields;
+    }
+
+    /**
+     * Parse the allowed values out of a DB enum column's metadata
+     * (e.g. "enum('active','cancelled')" → ['active', 'cancelled']).
+     * Returns [] for non-enum columns.
+     *
+     * @param  array<string, mixed>  $colMeta  One entry from Schema::getColumns().
+     * @return list<string>
+     */
+    protected function enumValues(array $colMeta): array
+    {
+        if (($colMeta['type_name'] ?? null) !== 'enum') return [];
+        if (! preg_match_all("/'((?:[^'\\\\]|\\\\.)*)'/", (string) ($colMeta['type'] ?? ''), $m)) return [];
+        return array_map(fn ($v) => str_replace(["\\'", '\\\\'], ["'", '\\'], $v), $m[1]);
     }
 
     /**
@@ -276,16 +307,32 @@ abstract class AdminController extends Controller
     protected function rules(?Model $item = null): array
     {
         $instance = new ($this->modelClass);
+        $table = $instance->getTable();
+        $colMeta = collect(cache()->remember("admin.cols.$table", 60, function () use ($table) {
+            try {
+                return Schema::getColumns($table);
+            } catch (\Throwable $e) {
+                return [];
+            }
+        }))->keyBy('name');
+
         $rules = [];
         foreach ($instance->getFillable() as $col) {
             if (in_array($col, ['password', 'remember_token'])) continue;
             if (str_ends_with($col, '_id') && $col !== 'id') {
                 $related = $this->resolveRelatedModel($col);
                 if ($related) {
-                    $table = (new $related)->getTable();
-                    $rules[$col] = "nullable|integer|exists:$table,id";
+                    $relTable = (new $related)->getTable();
+                    $rules[$col] = "nullable|integer|exists:$relTable,id";
                     continue;
                 }
+            }
+            // Enum columns: only accept one of the DB-declared values.
+            $enumValues = $this->enumValues($colMeta[$col] ?? []);
+            if ($enumValues) {
+                $required = ! ($colMeta[$col]['nullable'] ?? true);
+                $rules[$col] = ($required ? 'required' : 'nullable') . '|in:' . implode(',', $enumValues);
+                continue;
             }
             $rules[$col] = 'nullable|string|max:65000';
         }
