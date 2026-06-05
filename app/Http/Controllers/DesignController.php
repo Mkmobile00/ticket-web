@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BlogPost;
 use App\Models\Cinema;
 use App\Models\City;
 use App\Models\Event;
@@ -26,7 +27,7 @@ class DesignController extends Controller
     private const PAGES = [
         'index.html', 'movie.html', 'showtimes.html', 'seats.html', 'checkout.html',
         'event.html', 'event-seats.html', 'event-checkout.html',
-        'sign-in.html', 'account.html', 'search.html', 'list.html',
+        'sign-in.html', 'account.html', 'search.html', 'list.html', 'blog.html',
     ];
 
     /** Accent tint pairs reused when the DB has no per-item colour. */
@@ -39,14 +40,6 @@ class DesignController extends Controller
 
     public function page(Request $request, string $page = 'index')
     {
-        $file = $page . '.html';
-        abort_unless(in_array($file, self::PAGES, true), 404);
-
-        $path = resource_path('design/' . $file);
-        abort_unless(is_file($path), 404);
-
-        $html = file_get_contents($path);
-
         $data = $this->catalog();
         if ($page === 'movie') {
             $data = array_merge($data, $this->movieDetail($request->query('m')));
@@ -55,7 +48,40 @@ class DesignController extends Controller
             $data = array_merge($data, $this->eventDetail($request->query('e')));
         }
 
+        return $this->serve($page, $data);
+    }
+
+    /** Blog listing (BOLETO design). */
+    public function blogIndex(Request $request)
+    {
+        return $this->serve('blog', array_merge($this->catalog(), ['blogPosts' => $this->blogList()]));
+    }
+
+    /** Blog detail (BOLETO design). */
+    public function blogShow(Request $request, \App\Models\BlogPost $post)
+    {
+        $post->incrementViews();
+        return $this->serve('blog', array_merge($this->catalog(), [
+            'blogPost'  => $this->blogDetail($post),
+            'blogPosts' => $this->blogList(3, $post->id), // "recent posts" rail
+        ]));
+    }
+
+    /** Read a design file and inject window.BOLETO_DATA overrides. */
+    private function serve(string $page, array $data)
+    {
+        $file = $page . '.html';
+        abort_unless(in_array($file, self::PAGES, true), 404);
+
+        $path = resource_path('design/' . $file);
+        abort_unless(is_file($path), 404);
+
+        $html = file_get_contents($path);
+
         $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        // Neutralise "</script>" (and any "</…") inside the JSON so rich HTML
+        // (e.g. blog content) can't break out of the inline <script> tag.
+        $json = str_replace('</', '<\/', $json);
         $override = '<script>Object.assign(window.BOLETO_DATA, ' . $json . ');</script>';
 
         // Inject right after the default data IIFE so window.BOLETO_DATA already exists.
@@ -137,6 +163,44 @@ class DesignController extends Controller
             ])->all();
     }
 
+    /** Published blog posts for the listing / recent rail. */
+    private function blogList(?int $limit = null, ?int $excludeId = null): array
+    {
+        return BlogPost::whereNotNull('published_at')
+            ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
+            ->with(['author:id,name', 'categories:id,name'])
+            ->latest('published_at')
+            ->when($limit, fn ($q) => $q->take($limit))
+            ->get()
+            ->map(fn ($p) => [
+                'title'    => $p->title,
+                'slug'     => $p->slug,
+                'excerpt'  => (string) ($p->excerpt ?: Str::limit(strip_tags((string) $p->content), 140)),
+                'image'    => $this->img($p->thumbnail),
+                'author'   => $p->author->name ?? 'Boleto',
+                'date'     => optional($p->published_at)->format('M d, Y'),
+                'category' => $p->categories->first()->name ?? 'Blog',
+                'views'    => (int) $p->views,
+            ])->all();
+    }
+
+    /** Single blog post for the detail page. */
+    private function blogDetail(BlogPost $post): array
+    {
+        $post->loadMissing(['author:id,name', 'categories:id,name', 'tags:id,name']);
+        return [
+            'title'      => $post->title,
+            'slug'       => $post->slug,
+            'content'    => (string) $post->content,
+            'image'      => $this->img($post->thumbnail),
+            'author'     => $post->author->name ?? 'Boleto',
+            'date'       => optional($post->published_at)->format('M d, Y'),
+            'categories' => $post->categories->pluck('name')->all(),
+            'tags'       => $post->tags->pluck('name')->all(),
+            'views'      => (int) $post->views,
+        ];
+    }
+
     /** GET /design-api/search?type=&q=&city=&date=&cinema= — live catalog search. */
     public function search(Request $request)
     {
@@ -175,6 +239,7 @@ class DesignController extends Controller
             ['label' => 'Movies', 'href' => '/movies', 'drop' => $drop($movies, '/movie', 'm')],
             ['label' => 'Events', 'href' => '/events', 'drop' => $drop($events, '/event', 'e')],
             ['label' => 'Sports', 'href' => '/sports', 'drop' => $drop($sports, '/event', 'e')],
+            ['label' => 'Blog', 'href' => '/blog'],
             ['label' => 'My Bookings', 'href' => '/account'],
             ['label' => 'Contact', 'href' => '/#subscribe'],
         ];

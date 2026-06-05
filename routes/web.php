@@ -104,8 +104,9 @@ Route::get('/sports/{sport:slug}/tickets', [SportController::class, 'tickets'])-
 Route::post('/sports/{sport:slug}/tickets', [SportController::class, 'storeTickets'])->name('sports.tickets.store')->middleware('auth');
 
 // Blog
-Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
-Route::get('/blog/{post:slug}', [BlogController::class, 'show'])->name('blog.show');
+// Blog — BOLETO design listing + detail (managed in admin → Blog Posts).
+Route::get('/blog', [\App\Http\Controllers\DesignController::class, 'blogIndex'])->name('blog.index');
+Route::get('/blog/{post:slug}', [\App\Http\Controllers\DesignController::class, 'blogShow'])->name('blog.show');
 Route::post('/blog/{post:slug}/comment', [BlogController::class, 'storeComment'])->name('blog.comment')->middleware('throttle:public-form');
 
 // Static pages
