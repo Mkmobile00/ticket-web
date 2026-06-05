@@ -23,8 +23,18 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
 
-        // The BOLETO design talks to /design-api/* with plain fetch (demo-user flow), no CSRF token.
+        // Trust the load balancer / reverse proxy so HTTPS, host and client IP are
+        // detected correctly behind TLS termination (needed for secure cookies + HSTS).
+        $middleware->trustProxies(at: '*');
+
+        // Baseline security headers on every response.
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+
+        // The BOLETO design talks to /design-api/* with plain fetch (no CSRF token),
+        // so those routes are token-CSRF-exempt — but an Origin/Referer same-origin
+        // check is enforced on them instead (see VerifyDesignApiOrigin).
         $middleware->validateCsrfTokens(except: ['design-api/*']);
+        $middleware->appendToGroup('web', \App\Http\Middleware\VerifyDesignApiOrigin::class);
 
         // Send unauthenticated admin-area visitors (dashboard + file manager) to the
         // admin login page, everyone else to the customer login.

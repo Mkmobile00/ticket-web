@@ -3,12 +3,29 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class UserController extends AdminController
 {
     protected string $modelClass = \App\Models\User::class;
     protected string $resource = 'user';
+
+    /**
+     * Constrain the privilege/identity fields instead of the generic
+     * `nullable|string|max:65000` default — `role` must be an allowed value so
+     * the admin CRUD can't persist an arbitrary/invalid (or escalated) role.
+     */
+    protected function rules(?Model $item = null): array
+    {
+        $rules = parent::rules($item);
+        $rules['name'] = 'required|string|max:120';
+        $rules['email'] = ['required', 'email', 'max:160', Rule::unique('users', 'email')->ignore($item?->id)];
+        $rules['role'] = 'required|in:admin,customer';
+
+        return $rules;
+    }
 
     public function index()
     {

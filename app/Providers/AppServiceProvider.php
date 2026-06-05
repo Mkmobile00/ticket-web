@@ -34,10 +34,30 @@ class AppServiceProvider extends ServiceProvider
     {
         Paginator::useBootstrapFive();
 
+        // Force HTTPS URL generation in production (local/dev stays HTTP).
+        if ($this->app->environment('production')) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
+
         // Rate limiters (BookMyShow "Security" section), per-user where logged in.
         RateLimiter::for('seat-lock', fn (Request $r) => Limit::perMinute(10)->by($r->user()?->id ?: $r->ip()));
         RateLimiter::for('payments', fn (Request $r) => Limit::perMinute(5)->by($r->user()?->id ?: $r->ip()));
-        RateLimiter::for('login', fn (Request $r) => Limit::perMinute(20)->by($r->ip()));
+
+        // Login: throttle per-email AND per-IP so a rotating-IP attacker can't
+        // bypass an IP-only limit, and one IP can't hammer many accounts.
+        RateLimiter::for('login', fn (Request $r) => [
+            Limit::perMinute(5)->by('login_email:' . strtolower((string) $r->input('email'))),
+            Limit::perMinute(20)->by('login_ip:' . $r->ip()),
+        ]);
+
+        // New-account creation — block mass signup / email bombing.
+        RateLimiter::for('register', fn (Request $r) => Limit::perMinute(5)->by($r->ip()));
+
+        // Public unauthenticated forms (contact, newsletter, blog comment, promo lookup).
+        RateLimiter::for('public-form', fn (Request $r) => Limit::perMinute(10)->by($r->ip()));
+
+        // One-time codes (email verify / OTP submit) — cap brute-force of the 6-digit code.
+        RateLimiter::for('otp', fn (Request $r) => Limit::perMinute(6)->by($r->user()?->id ?: $r->ip()));
 
         // Make the city list + currently-selected city available to the header
         // and showtime pages (the BookMyShow-style city selector).

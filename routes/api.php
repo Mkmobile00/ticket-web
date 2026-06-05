@@ -18,9 +18,9 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->group(function () {
 
     // ---- Auth ----
-    Route::post('/register', [AuthApiController::class, 'register']);
+    Route::post('/register', [AuthApiController::class, 'register'])->middleware('throttle:register');
     Route::post('/login', [AuthApiController::class, 'login'])->middleware('throttle:login');
-    Route::post('/auth/google', [AuthApiController::class, 'google']);
+    Route::post('/auth/google', [AuthApiController::class, 'google'])->middleware('throttle:login');
     Route::post('/password/forgot', [AuthApiController::class, 'forgotPassword'])->middleware('throttle:login');
     Route::post('/password/reset', [AuthApiController::class, 'resetPassword'])->middleware('throttle:login');
 
@@ -50,9 +50,9 @@ Route::prefix('v1')->group(function () {
     Route::get('/partners', [ContentApiController::class, 'partners']);
     Route::get('/blog', [ContentApiController::class, 'blog']);
     Route::get('/blog/{post:slug}', [ContentApiController::class, 'blogShow']);
-    Route::post('/promo/validate', [ContentApiController::class, 'validatePromo']);
-    Route::post('/contact', [ContentApiController::class, 'contact']);
-    Route::post('/newsletter', [ContentApiController::class, 'newsletter']);
+    Route::post('/promo/validate', [ContentApiController::class, 'validatePromo'])->middleware('throttle:public-form');
+    Route::post('/contact', [ContentApiController::class, 'contact'])->middleware('throttle:public-form');
+    Route::post('/newsletter', [ContentApiController::class, 'newsletter'])->middleware('throttle:public-form');
 
     // ---- Authenticated (Bearer token) ----
     Route::middleware('auth:sanctum')->group(function () {
@@ -64,9 +64,9 @@ Route::prefix('v1')->group(function () {
         Route::put('/profile', [ProfileApiController::class, 'update']);
         Route::put('/profile/password', [ProfileApiController::class, 'password']);
 
-        // Email verification
-        Route::post('/email/verify/send', [AuthApiController::class, 'sendEmailVerification']);
-        Route::post('/email/verify', [AuthApiController::class, 'verifyEmail']);
+        // Email verification (OTP) — throttle the send + the 6-digit code submission.
+        Route::post('/email/verify/send', [AuthApiController::class, 'sendEmailVerification'])->middleware('throttle:otp');
+        Route::post('/email/verify', [AuthApiController::class, 'verifyEmail'])->middleware('throttle:otp');
 
         // Push notification device tokens
         Route::post('/device-token', [ProfileApiController::class, 'registerDevice']);

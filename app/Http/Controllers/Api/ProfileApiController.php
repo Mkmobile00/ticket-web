@@ -45,7 +45,11 @@ class ProfileApiController extends Controller
         if (! Hash::check($request->current_password, $request->user()->password)) {
             return response()->json(['message' => 'Current password is incorrect.', 'errors' => ['current_password' => ['Incorrect password.']]], 422);
         }
-        $request->user()->update(['password' => Hash::make($request->password)]);
+        $user = $request->user();
+        $user->update(['password' => Hash::make($request->password)]);
+        // Revoke every OTHER token after a password change (keep the current session),
+        // so a previously leaked token can't survive the change.
+        $user->tokens()->where('id', '!=', $user->currentAccessToken()->id)->delete();
         return response()->json(['message' => 'Password changed.']);
     }
 

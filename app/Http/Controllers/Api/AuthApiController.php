@@ -23,6 +23,9 @@ use Illuminate\Validation\Rules\Password;
  */
 class AuthApiController extends Controller
 {
+    /** Personal access token lifetime (days) — stolen tokens expire instead of living forever. */
+    private const TOKEN_TTL_DAYS = 30;
+
     /** POST /api/v1/register  { name, email, password, password_confirmation, phone? } */
     public function register(Request $request)
     {
@@ -40,7 +43,7 @@ class AuthApiController extends Controller
 
         return response()->json([
             'user' => $this->userPayload($user),
-            'token' => $user->createToken('flutter')->plainTextToken,
+            'token' => $user->createToken('flutter', ['*'], now()->addDays(self::TOKEN_TTL_DAYS))->plainTextToken,
         ], 201);
     }
 
@@ -58,7 +61,7 @@ class AuthApiController extends Controller
 
         return response()->json([
             'user' => $this->userPayload($user),
-            'token' => $user->createToken('flutter')->plainTextToken,
+            'token' => $user->createToken('flutter', ['*'], now()->addDays(self::TOKEN_TTL_DAYS))->plainTextToken,
         ]);
     }
 
@@ -105,7 +108,11 @@ class AuthApiController extends Controller
             return response()->json(['message' => 'Invalid or expired code.', 'errors' => ['code' => ['Invalid or expired code.']]], 422);
         }
 
-        User::where('email', $request->email)->update(['password' => Hash::make($request->password)]);
+        $user = User::where('email', $request->email)->first();
+        $user->forceFill(['password' => Hash::make($request->password)])->save();
+        // Revoke every existing token: a password reset must invalidate any
+        // previously stolen/leaked session so it can't outlive the reset.
+        $user->tokens()->delete();
         DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
         return response()->json(['message' => 'Password has been reset. Please log in.']);
@@ -131,6 +138,14 @@ class AuthApiController extends Controller
             return response()->json(['message' => 'Invalid Google token.'], 401);
         }
 
+        // Verify the token was minted for THIS app (audience). Without this, a token
+        // issued to any other Google OAuth client would be accepted -> account takeover.
+        // Enforced only when a client id is configured (set GOOGLE_CLIENT_ID in production).
+        $expectedAud = config('services.google.client_id');
+        if ($expectedAud && ($g['aud'] ?? null) !== $expectedAud) {
+            return response()->json(['message' => 'Invalid Google token.'], 401);
+        }
+
         $user = User::firstOrCreate(
             ['email' => $g['email']],
             ['name' => $g['name'] ?? $g['email'], 'password' => Hash::make(Str::random(32)), 'role' => 'customer']
@@ -142,7 +157,7 @@ class AuthApiController extends Controller
 
         return response()->json([
             'user' => $this->userPayload($user),
-            'token' => $user->createToken('flutter-google')->plainTextToken,
+            'token' => $user->createToken('flutter-google', ['*'], now()->addDays(self::TOKEN_TTL_DAYS))->plainTextToken,
         ]);
     }
 
@@ -200,7 +215,8 @@ class AuthApiController extends Controller
             // Queue so the HTTP request returns immediately (a queue worker sends it).
             Mail::to($to)->queue($mailable);
         } catch (\Throwable $e) {
-            Log::warning('API mail failed', ['to' => $to, 'error' => $e->getMessage()]);
+            // Redact the recipient address — don't write PII to logs.
+            Log::warning('API mail failed', ['to_hash' => hash('sha256', $to), 'error' => $e->getMessage()]);
         }
     }
 }

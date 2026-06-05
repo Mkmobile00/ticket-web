@@ -15,6 +15,16 @@ class SettingController extends AdminController
 
     public function update(Request $request)
     {
+        // Constrain text values and — critically — restrict uploads to images of a
+        // bounded size, so the public storage path can't receive arbitrary file
+        // types (.svg/.html/.php) or oversized files.
+        $request->validate([
+            'settings' => 'array',
+            'settings.*' => 'nullable|string|max:5000',
+            'files' => 'array',
+            'files.*' => 'file|mimetypes:image/jpeg,image/png,image/webp,image/gif|max:4096', // 4 MB, images only
+        ]);
+
         foreach ($request->input('settings', []) as $key => $value) {
             Setting::updateOrCreate(['key' => $key], ['value' => $value]);
         }

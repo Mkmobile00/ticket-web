@@ -50,6 +50,13 @@ return [
         'image_base' => env('TMDB_IMAGE_BASE', 'https://image.tmdb.org/t/p/w500'),
     ],
 
+    // Google Sign-In: the OAuth **Web client ID**. When set, the API verifies that
+    // a submitted Google ID token's `aud` claim matches this id (prevents tokens
+    // minted for other apps being accepted at POST /api/v1/auth/google).
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+    ],
+
     // eSewa (Nepal) ePay v2. Defaults to the PUBLIC sandbox test merchant
     // ("EPAYTEST") — no signup required, works out of the box for testing.
     // Sandbox test login: eSewa ID 9806800001 / password Nepal@123 / MPIN 1122.

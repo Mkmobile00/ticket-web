@@ -43,9 +43,9 @@ Route::post('/design-api/promo', [\App\Http\Controllers\DesignBookingController:
 Route::get('/design-api/city', [\App\Http\Controllers\DesignController::class, 'setCity']);
 Route::get('/design-api/search', [\App\Http\Controllers\DesignController::class, 'search']);
 
-// Customer auth for the design (session-based, CSRF-exempt).
-Route::post('/design-api/login', [\App\Http\Controllers\DesignAuthController::class, 'login']);
-Route::post('/design-api/register', [\App\Http\Controllers\DesignAuthController::class, 'register']);
+// Customer auth for the design (session-based, CSRF-exempt; protected by Origin check).
+Route::post('/design-api/login', [\App\Http\Controllers\DesignAuthController::class, 'login'])->middleware('throttle:login');
+Route::post('/design-api/register', [\App\Http\Controllers\DesignAuthController::class, 'register'])->middleware('throttle:register');
 Route::post('/design-api/logout', [\App\Http\Controllers\DesignAuthController::class, 'logout']);
 Route::get('/design-api/profile', [\App\Http\Controllers\DesignAuthController::class, 'profile']);
 Route::post('/design-api/profile', [\App\Http\Controllers\DesignAuthController::class, 'updateProfile']);
@@ -106,17 +106,17 @@ Route::post('/sports/{sport:slug}/tickets', [SportController::class, 'storeTicke
 // Blog
 Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/{post:slug}', [BlogController::class, 'show'])->name('blog.show');
-Route::post('/blog/{post:slug}/comment', [BlogController::class, 'storeComment'])->name('blog.comment');
+Route::post('/blog/{post:slug}/comment', [BlogController::class, 'storeComment'])->name('blog.comment')->middleware('throttle:public-form');
 
 // Static pages
 Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/apps', [PageController::class, 'apps'])->name('apps');
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
-Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store')->middleware('throttle:public-form');
 Route::get('/popcorn', [PopcornController::class, 'index'])->name('popcorn');
 
 // Newsletter
-Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
+Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe')->middleware('throttle:public-form');
 
 // Search / availability API for live home dropdowns
 Route::prefix('api')->name('api.')->group(function () {
@@ -145,7 +145,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register');
 });
 
 // Admin login — reachable even while signed in as a customer, so you can switch accounts.
