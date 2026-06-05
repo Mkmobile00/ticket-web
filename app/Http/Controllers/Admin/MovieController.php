@@ -39,6 +39,12 @@ class MovieController extends AdminController
                 'selected' => ($item && $item->exists) ? $item->{$key}->pluck('id')->all() : [],
             ];
         }
+        $fields[] = [
+            'name' => 'gallery',
+            'label' => 'Gallery Photos (movie detail "Photos" section)',
+            'type' => 'image-repeater',
+            'images' => ($item && $item->exists) ? $item->gallery()->orderBy('order')->pluck('image')->all() : [],
+        ];
         return $fields;
     }
 
@@ -46,6 +52,18 @@ class MovieController extends AdminController
     {
         foreach (self::M2M as [$key]) {
             $movie->{$key}()->sync(array_map('intval', (array) $request->input($key, [])));
+        }
+    }
+
+    private function syncGallery(Request $request, Movie $movie): void
+    {
+        $images = array_values(array_filter(
+            array_map('trim', (array) $request->input('gallery', [])),
+            fn ($v) => $v !== ''
+        ));
+        $movie->gallery()->delete();
+        foreach ($images as $i => $image) {
+            $movie->gallery()->create(['image' => $image, 'order' => $i]);
         }
     }
 
@@ -133,6 +151,7 @@ class MovieController extends AdminController
         $data = $request->validate($this->rules());
         $movie = Movie::create($data);
         $this->syncM2M($request, $movie);
+        $this->syncGallery($request, $movie);
         return redirect()->route('admin.movies.index')->with('status', 'Created.');
     }
 
@@ -159,6 +178,7 @@ class MovieController extends AdminController
         $data = $request->validate($this->rules($item));
         $item->update($data);
         $this->syncM2M($request, $item);
+        $this->syncGallery($request, $item);
         return redirect()->route('admin.movies.index')->with('status', 'Updated.');
     }
 

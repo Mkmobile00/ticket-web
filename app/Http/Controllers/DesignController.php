@@ -195,8 +195,8 @@ class DesignController extends Controller
     private function movieDetail(?string $slug): array
     {
         if (!$slug) return [];
-        $movie = Movie::where('slug', $slug)->with('cast')->first()
-            ?: Movie::with('cast')->get()->first(fn ($m) => Str::slug($m->title) === $slug);
+        $movie = Movie::where('slug', $slug)->with('cast', 'gallery')->first()
+            ?: Movie::with('cast', 'gallery')->get()->first(fn ($m) => Str::slug($m->title) === $slug);
         if (!$movie) return [];
 
         $cast = [];
@@ -214,10 +214,13 @@ class DesignController extends Controller
             }
         }
 
+        $gallery = $movie->gallery->map(fn ($g) => $this->img($g->image))->filter()->values()->all();
+
         $out = [];
         if ($movie->synopsis) $out['synopsis'] = (string) $movie->synopsis;
         if ($cast) $out['cast'] = $cast;
         if ($crew) $out['crew'] = $crew;
+        if ($gallery) $out['gallery'] = $gallery;
         return $out;
     }
 

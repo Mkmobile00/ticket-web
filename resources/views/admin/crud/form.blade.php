@@ -4,7 +4,7 @@
 
 @php
     $routePrefix = 'admin.' . Str::plural($resource);
-    $hasImageField = collect($fields)->contains(fn ($f) => ($f['type'] ?? '') === 'image');
+    $hasImageField = collect($fields)->contains(fn ($f) => in_array($f['type'] ?? '', ['image', 'image-repeater'], true));
 @endphp
 
 @push('styles')
@@ -40,6 +40,9 @@
     .kv-rows { display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
     .kv-row { display:flex; align-items:center; gap:10px; }
     .kv-row input:first-of-type { max-width:160px; }
+
+    .img-rows { display:flex; flex-direction:column; gap:14px; margin-bottom:10px; }
+    .img-row { border:1px solid #e9ecef; border-radius:8px; padding:10px; }
 </style>
 @endpush
 
@@ -175,6 +178,38 @@
                                 @endforelse
                             </div>
                             <button type="button" class="btn btn-outline-secondary btn-sm kv-add">+ Add row</button>
+                        </div>
+                    @elseif ($type === 'image-repeater')
+                        @php
+                            $imgs = old($name);
+                            if (!is_array($imgs)) { $imgs = $field['images'] ?? []; }
+                            $imgs = array_values(array_filter((array) $imgs, fn ($v) => $v !== null && $v !== ''));
+                            if (empty($imgs)) { $imgs = ['']; } // start with one empty row
+                            $previewOf = function ($v) {
+                                if (!$v) return null;
+                                if (str_starts_with($v, 'http')) return $v;
+                                if (str_starts_with($v, 'assets/')) return asset($v);
+                                if (str_starts_with($v, '/storage/')) return $v;
+                                return asset('storage/' . ltrim($v, '/'));
+                            };
+                        @endphp
+                        <div class="img-repeater" data-name="{{ $name }}">
+                            <div class="img-rows">
+                                @foreach ($imgs as $idx => $imgPath)
+                                    @php $iid = 'lfm-' . $name . '-' . $idx; @endphp
+                                    <div class="img-row">
+                                        <div class="lfm-input-group">
+                                            <input type="text" class="form-control" name="{{ $name }}[]" id="{{ $iid }}" value="{{ $imgPath }}" placeholder="Pick an image or paste URL">
+                                            <button type="button" class="btn btn-outline-primary lfm-button" data-input="{{ $iid }}" data-preview="{{ $iid }}-prev"><i class="bi bi-image"></i> Choose</button>
+                                            <button type="button" class="btn btn-outline-danger img-remove" title="Remove">&times;</button>
+                                        </div>
+                                        <div id="{{ $iid }}-prev" class="mt-1">
+                                            @if ($previewOf($imgPath))<img src="{{ $previewOf($imgPath) }}" class="lfm-preview" alt="preview">@endif
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm img-add">+ Add image</button>
                         </div>
                     @elseif ($type === 'checkbox')
                         <div><input type="checkbox" name="{{ $name }}" value="1" @checked($value)></div>
@@ -348,6 +383,44 @@
                 '<button type="button" class="btn btn-outline-danger kv-remove" title="Remove row">&times;</button>';
             rows.appendChild(div);
             bindRemove(div);
+        });
+    });
+
+    // Multi-image repeater (e.g. movie gallery). Existing rows' LFM buttons are
+    // bound by the global .lfm-button loop; only newly added rows are bound here.
+    document.querySelectorAll('.img-repeater').forEach(function (container) {
+        const name = container.dataset.name;
+        const rows = container.querySelector('.img-rows');
+        let counter = rows.querySelectorAll('.img-row').length;
+
+        function bindRemove(row) {
+            row.querySelector('.img-remove').addEventListener('click', function () {
+                if (rows.children.length <= 1) {
+                    row.querySelector('input').value = '';
+                    const prev = row.querySelector('[id$="-prev"]');
+                    if (prev) prev.innerHTML = '';
+                } else {
+                    row.remove();
+                }
+            });
+        }
+        rows.querySelectorAll('.img-row').forEach(bindRemove);
+
+        container.querySelector('.img-add').addEventListener('click', function () {
+            const id = 'lfm-' + name + '-new' + (counter++);
+            const div = document.createElement('div');
+            div.className = 'img-row';
+            div.innerHTML =
+                '<div class="lfm-input-group">' +
+                  '<input type="text" class="form-control" name="' + name + '[]" id="' + id + '" value="" placeholder="Pick an image or paste URL">' +
+                  '<button type="button" class="btn btn-outline-primary lfm-button" data-input="' + id + '" data-preview="' + id + '-prev"><i class="bi bi-image"></i> Choose</button>' +
+                  '<button type="button" class="btn btn-outline-danger img-remove" title="Remove">&times;</button>' +
+                '</div>' +
+                '<div id="' + id + '-prev" class="mt-1"></div>';
+            rows.appendChild(div);
+            bindRemove(div);
+            // Bind the LFM picker for this brand-new button.
+            if (window.jQuery) jQuery(div.querySelector('.lfm-button')).filemanager('image', { prefix: '/filemanager' });
         });
     });
 })();

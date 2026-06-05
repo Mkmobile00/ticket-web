@@ -1389,12 +1389,14 @@ function DetailPage() {
 
           {/* main */}
           <div>
+            {(D.gallery && D.gallery.length > 0) && (<>
             <h3 className="syn-h">Photos</h3>
             <div className="photos">
-              {Array.from({ length: D.photoCount }).map((_, i) => (
-                <div className="photo" key={i}><img src={img(m.title + " still " + i, 480, 300)} alt="" loading="lazy" /></div>
+              {D.gallery.map((src, i) => (
+                <div className="photo" key={i}><img src={src} alt="" loading="lazy" /></div>
               ))}
             </div>
+            </>)}
 
             <div className="tabs">
               <span className={"tab" + (tab === "summary" ? " on" : "")} onClick={() => setTab("summary")}>Summary</span>
