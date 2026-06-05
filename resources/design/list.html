@@ -868,6 +868,29 @@ function SearchPanel({ D }) {
 
 /* ---------- sidebar ---------- */
 function Sidebar({ D, onToast, onOpenTrend }) {
+  // Promo cards come from the DB (admin → Banners, placement "sidebar"); fall
+  // back to the static defaults if none are configured.
+  const banners = (D.sidebarBanners && D.sidebarBanners.length)
+    ? D.sidebarBanners
+    : (D.ads || []).map(a => ({ kicker: a.kicker, title: a.title, subtitle: a.note || a.price || "", cta: a.cta || "Call Now", link: "", image: "" }));
+  const veils = [
+    "linear-gradient(120deg, rgba(179,38,31,.85), rgba(224,96,58,.4))",
+    "linear-gradient(120deg, rgba(194,41,138,.85), rgba(232,68,122,.45))",
+  ];
+  const goBanner = (b) => {
+    if (b.link) { if (b.link.indexOf("http") === 0) window.open(b.link, "_blank"); else location.href = b.link; }
+    else { onToast(b.title || "Promo"); }
+  };
+  const AdCard = (b, i) => (
+    <div className="ad" key={i} onClick={() => goBanner(b)} style={{ cursor: "pointer" }}>
+      <img src={b.image || img(b.title || "promo", 320, 200)} alt="" />
+      <div className="ad-veil" style={{ background: veils[i % veils.length] }} />
+      {b.kicker ? <div className="ad-kicker">{b.kicker}</div> : null}
+      <div className="ad-title">{b.title}</div>
+      {b.subtitle ? <div className="ad-note">{b.subtitle}</div> : null}
+      <button className="ad-cta">{b.cta || "Learn More"}</button>
+    </div>
+  );
   return (
     <aside className="side">
       <div className="promise">
@@ -876,14 +899,7 @@ function Sidebar({ D, onToast, onOpenTrend }) {
         ))}
       </div>
 
-      <div className="ad" onClick={() => onToast("Special offer")} style={{ cursor: "pointer" }}>
-        <img src={img("fitness-gym-training", 320, 200)} alt="" />
-        <div className="ad-veil" style={{ background: "linear-gradient(120deg, rgba(179,38,31,.85), rgba(224,96,58,.4))" }} />
-        <div className="ad-kicker">{D.ads[0].kicker}</div>
-        <div className="ad-title">{D.ads[0].title}</div>
-        <div className="ad-note">{D.ads[0].note}</div>
-        <button className="ad-cta">Call Now</button>
-      </div>
+      {banners[0] ? AdCard(banners[0], 0) : null}
 
       <div className="trend">
         <h4>Trending Searches</h4>
@@ -894,14 +910,7 @@ function Sidebar({ D, onToast, onOpenTrend }) {
         ))}
       </div>
 
-      <div className="ad" onClick={() => onToast("New arrivals")} style={{ cursor: "pointer" }}>
-        <img src={img("sport-outfit-fashion", 320, 220)} alt="" />
-        <div className="ad-veil" style={{ background: "linear-gradient(120deg, rgba(194,41,138,.85), rgba(232,68,122,.45))" }} />
-        <div className="ad-kicker">{D.ads[1].kicker}</div>
-        <div className="ad-title">{D.ads[1].title}</div>
-        <div className="ad-price">{D.ads[1].price}</div>
-        <button className="ad-cta">{D.ads[1].cta}</button>
-      </div>
+      {banners.slice(1).map((b, i) => AdCard(b, i + 1))}
     </aside>
   );
 }

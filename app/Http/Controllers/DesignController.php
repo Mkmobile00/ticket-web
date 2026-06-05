@@ -9,6 +9,7 @@ use App\Models\Faq;
 use App\Models\Movie;
 use App\Models\Partner;
 use App\Models\Setting;
+use App\Models\SidebarBanner;
 use App\Models\Sport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -58,7 +59,9 @@ class DesignController extends Controller
         $override = '<script>Object.assign(window.BOLETO_DATA, ' . $json . ');</script>';
 
         // Inject right after the default data IIFE so window.BOLETO_DATA already exists.
-        $html = preg_replace('/(\}\)\(\);\s*<\/script>)/s', '$1' . "\n  " . $override, $html, 1);
+        // Use a callback so $-sequences in the JSON (e.g. prices like "$299") are
+        // NOT interpreted as regex backreferences.
+        $html = preg_replace_callback('/(\}\)\(\);\s*<\/script>)/s', fn ($m) => $m[1] . "\n  " . $override, $html, 1);
 
         return response($html, 200)->header('Content-Type', 'text/html; charset=UTF-8');
     }
@@ -113,7 +116,25 @@ class DesignController extends Controller
             'searchCinemas' => Cinema::orderBy('name')->pluck('name')->all(),
             'auth'         => ['user' => $customer],
             'nav'          => $this->nav($movies, $events, $sports),
+            'sidebarBanners' => $this->sidebarBanners(),
         ];
+    }
+
+    /** Active sidebar promo cards (managed in admin → Banners). */
+    private function sidebarBanners(): array
+    {
+        return SidebarBanner::where('is_active', true)
+            ->whereIn('placement', ['sidebar', 'both'])
+            ->orderBy('position')->orderBy('id')
+            ->get()
+            ->map(fn ($b) => [
+                'kicker'   => (string) $b->kicker,
+                'title'    => (string) $b->title,
+                'subtitle' => (string) $b->subtitle,
+                'cta'      => (string) ($b->cta_text ?: 'Learn More'),
+                'link'     => (string) $b->link,
+                'image'    => $this->img($b->image),
+            ])->all();
     }
 
     /** GET /design-api/search?type=&q=&city=&date=&cinema= — live catalog search. */
