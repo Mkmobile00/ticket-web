@@ -75,6 +75,7 @@
                 ['Cities', 'admin.cities.index', 'geo-alt'],
                 ['Banners', 'admin.banners.index', 'image'],
                 ['Menus', 'admin.menus.index', 'list-nested'],
+                ['Offers', 'admin.offers.index', 'percent'],
                 ['FAQs', 'admin.faqs.index', 'question-circle'],
                 ['Partners', 'admin.partners.index', 'handshake'],
                 ['Contact Messages', 'admin.contact-messages.index', 'envelope'],

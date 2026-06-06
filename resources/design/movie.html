@@ -1384,13 +1384,15 @@ function DetailPage() {
                 <div className="offer-note">{o.note}</div>
               </div>
             ))}
-            <div className="ad" style={{ marginTop: 6 }} onClick={() => flash("Special offer")}>
-              <img src={img("fitness-gym-training", 320, 300)} alt="" />
-              <div className="ad-veil" style={{ background: "linear-gradient(120deg, rgba(179,38,31,.85), rgba(224,96,58,.4))" }} />
-              <div className="ad-kicker">50% OFF</div>
-              <div className="ad-title">Be Strong! Come & Join Us</div>
-              <div className="ad-note">Call: 022-6394911</div>
-            </div>
+            {(D.sidebarBanners || []).slice(0, 1).map((b, i) => (
+              <div className="ad" key={i} style={{ marginTop: 6, cursor: "pointer" }} onClick={() => { if (b.link) { if (b.link.indexOf("http") === 0) window.open(b.link, "_blank"); else location.href = b.link; } else { flash(b.title || "Promo"); } }}>
+                <img src={b.image || img(b.title || "promo", 320, 300)} alt="" />
+                <div className="ad-veil" style={{ background: "linear-gradient(120deg, rgba(179,38,31,.85), rgba(224,96,58,.4))" }} />
+                {b.kicker ? <div className="ad-kicker">{b.kicker}</div> : null}
+                <div className="ad-title">{b.title}</div>
+                {b.subtitle ? <div className="ad-note">{b.subtitle}</div> : null}
+              </div>
+            ))}
           </aside>
 
           {/* main */}

@@ -9,6 +9,7 @@ use App\Models\Event;
 use App\Models\Faq;
 use App\Models\MenuItem;
 use App\Models\Movie;
+use App\Models\Offer;
 use App\Models\Partner;
 use App\Models\Setting;
 use App\Models\SidebarBanner;
@@ -223,6 +224,7 @@ class DesignController extends Controller
             'nav'          => $this->nav($movies, $events, $sports),
             'footer'       => $this->footerData(),
             'social'       => $this->socialLinks(),
+            'offers'       => $this->offersList(),
             'sidebarBanners' => $this->sidebarBanners(),
         ];
     }
@@ -343,6 +345,14 @@ class DesignController extends Controller
             $footer['links'] = $links;
         }
         return $footer;
+    }
+
+    /** Applicable offers (admin → Offers) shown on the movie detail sidebar. */
+    private function offersList(): array
+    {
+        return Offer::where('is_active', true)->orderBy('position')->orderBy('id')->get()
+            ->map(fn ($o) => ['name' => $o->name, 'note' => (string) $o->note, 'color' => $o->color ?: '#0fb39a'])
+            ->all();
     }
 
     /** Social links from settings: [{icon, url}] for each network that has a URL. */
