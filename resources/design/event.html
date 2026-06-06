@@ -1382,7 +1382,7 @@ function Footer({ D, onToast }) {
       <div className="wrap">
         <div className="foot-in">
           <a className="logo" href="#top"><span className="logo-mark"><Icon n="ticket" s={19} /></span><span>BOLE<b>TO</b></span></a>
-          <div className="foot-social">{D.footer.social.map(s => <a key={s} onClick={() => onToast("Follow us")}><Icon n={s} s={18} /></a>)}</div>
+          <div className="foot-social">{D.footer.social.map((s, i) => <a key={i} href={(s && s.url) || "#"} target={(s && s.url) ? "_blank" : undefined} rel="noopener"><Icon n={(s && s.icon) || s} s={18} /></a>)}</div>
         </div>
         <div className="foot-bottom">
           <span>Copyright © 2026. All Rights Reserved By <b>BOLETO</b></span>
@@ -1574,7 +1574,7 @@ function EventPage() {
             )}
             <div className="ev-meta-item"><span className="mi-ico"><Icon n="pin" s={18} /></span><div><b>{ev.addr2 || ev.venue || ev.addr1}</b><span>{ev.addr2 ? ev.addr1 : (ev.venue || "")}</span></div></div>
             <div className="ev-meta-item"><span className="mi-ico"><Icon n="mail" s={18} /></span><div><b>Drop us a line</b><span>{info.email}</span></div></div>
-            <div className="ev-meta-social"><a><Icon n="fb" s={16} /></a><a><Icon n="tw" s={16} /></a><a><Icon n="ig" s={16} /></a><a><Icon n="yt" s={16} /></a></div>
+            <div className="ev-meta-social">{(D.social || []).map((s, i) => <a key={i} href={s.url || "#"} target="_blank" rel="noopener"><Icon n={s.icon} s={16} /></a>)}</div>
           </div>
         </div>
       </section>

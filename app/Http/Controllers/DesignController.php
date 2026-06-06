@@ -222,6 +222,7 @@ class DesignController extends Controller
             'auth'         => ['user' => $customer],
             'nav'          => $this->nav($movies, $events, $sports),
             'footer'       => $this->footerData(),
+            'social'       => $this->socialLinks(),
             'sidebarBanners' => $this->sidebarBanners(),
         ];
     }
@@ -337,11 +338,27 @@ class DesignController extends Controller
             ->orderBy('position')->orderBy('id')->get()
             ->map(fn ($it) => ['label' => $it->label, 'href' => $it->url])->all();
 
-        $footer = ['social' => ['fb', 'tw', 'ig', 'yt']];
+        $footer = ['social' => $this->socialLinks()];
         if (! empty($links)) {
             $footer['links'] = $links;
         }
         return $footer;
+    }
+
+    /** Social links from settings: [{icon, url}] for each network that has a URL. */
+    private function socialLinks(): array
+    {
+        $map = ['fb' => 'social_facebook', 'tw' => 'social_twitter', 'ig' => 'social_instagram', 'yt' => 'social_youtube'];
+        $s = Setting::whereIn('key', array_values($map))->pluck('value', 'key');
+
+        $out = [];
+        foreach ($map as $icon => $key) {
+            $url = trim((string) ($s[$key] ?? ''));
+            if ($url !== '') {
+                $out[] = ['icon' => $icon, 'url' => $url];
+            }
+        }
+        return $out;
     }
 
     /** Fallback nav when no header menu items are configured. */

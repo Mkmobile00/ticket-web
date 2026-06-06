@@ -978,7 +978,7 @@ function Footer({ D, onToast }) {
       <div className="wrap">
         <div className="foot-in">
           <a className="logo" href="#top"><span className="logo-mark"><Icon n="ticket" s={19} /></span><span>BOLE<b>TO</b></span></a>
-          <div className="foot-social">{D.footer.social.map(s => <a key={s} onClick={() => onToast("Follow us")}><Icon n={s} s={18} /></a>)}</div>
+          <div className="foot-social">{D.footer.social.map((s, i) => <a key={i} href={(s && s.url) || "#"} target={(s && s.url) ? "_blank" : undefined} rel="noopener"><Icon n={(s && s.icon) || s} s={18} /></a>)}</div>
         </div>
         <div className="foot-bottom">
           <span>Copyright © 2026. All Rights Reserved By <b>BOLETO</b></span>

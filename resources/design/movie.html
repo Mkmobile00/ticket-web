@@ -1170,7 +1170,7 @@ function Footer({ D, onToast }) {
       <div className="wrap">
         <div className="foot-in">
           <a className="logo" href="#top"><span className="logo-mark"><Icon n="ticket" s={19} /></span><span>BOLE<b>TO</b></span></a>
-          <div className="foot-social">{D.footer.social.map(s => <a key={s} onClick={() => onToast("Follow us")}><Icon n={s} s={18} /></a>)}</div>
+          <div className="foot-social">{D.footer.social.map((s, i) => <a key={i} href={(s && s.url) || "#"} target={(s && s.url) ? "_blank" : undefined} rel="noopener"><Icon n={(s && s.icon) || s} s={18} /></a>)}</div>
         </div>
         <div className="foot-bottom">
           <span>Copyright © 2026. All Rights Reserved By <b>BOLETO</b></span>
@@ -1347,7 +1347,7 @@ function DetailPage() {
               <span><Icon n="cal" s={16} /> 07 Sep, 2023</span>
               <span><Icon n="film" s={16} /> {Math.floor(m.runtime / 60)} hrs {m.runtime % 60} mins</span>
             </div>
-            <div className="dh-social"><a><Icon n="fb" s={18} /></a><a><Icon n="tw" s={18} /></a><a><Icon n="ig" s={18} /></a><a><Icon n="yt" s={18} /></a></div>
+            <div className="dh-social">{(D.social || []).map((s, i) => <a key={i} href={s.url || "#"} target="_blank" rel="noopener"><Icon n={s.icon} s={18} /></a>)}</div>
             {D.trailer ? (
               <button className="btn-cta" onClick={() => setTrailer(D.trailer)} style={{ marginTop: 18, display: "inline-flex", alignItems: "center", gap: 8 }}>
                 <Icon n="play" s={16} /> Watch Trailer
