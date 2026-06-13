@@ -43,26 +43,35 @@ class DesignController extends Controller
     public function page(Request $request, string $page = 'index')
     {
         $data = $this->catalog();
+        $seo = [];
         if ($page === 'movie') {
             $data = array_merge($data, $this->movieDetail($request->query('m')));
-        }
-        if ($page === 'event') {
+            $seo = $this->movieSeo($request->query('m'));
+        } elseif ($page === 'event') {
             $data = array_merge($data, $this->eventDetail($request->query('e')));
+            $seo = $this->eventSeo($request->query('e'));
+        } elseif ($page === 'list') {
+            $seo = $this->listSeo($request);
         }
 
-        return $this->serve($page, $data);
+        return $this->serve($page, $data, $seo);
     }
 
     /** Blog listing (BOLETO design). */
     public function blogIndex(Request $request)
     {
-        return $this->serve('blog', array_merge($this->catalog(), ['blogPosts' => $this->blogList()]));
+        return $this->serve('blog', array_merge($this->catalog(), ['blogPosts' => $this->blogList()]), [
+            'title' => 'Blog', 'description' => 'News, guides and stories from Boleto.',
+        ]);
     }
 
     /** Contact page (BOLETO design, info from admin → Settings). */
     public function contact(Request $request)
     {
-        return $this->serve('contact', array_merge($this->catalog(), ['contact' => $this->contactData()]));
+        $c = $this->contactData();
+        return $this->serve('contact', array_merge($this->catalog(), ['contact' => $c]), [
+            'title' => $c['heading'] ?: 'Contact Us', 'description' => $c['intro'] ?: null,
+        ]);
     }
 
     /** POST /design-api/contact — store a contact message (admin → Contact Messages). */
@@ -104,11 +113,16 @@ class DesignController extends Controller
         $faqs = Faq::where('is_active', true)->orderBy('order')->take(8)->get()
             ->map(fn ($f) => ['q' => $f->question, 'a' => $f->answer])->all();
 
+        $about = $this->aboutData();
         return $this->serve('about', array_merge($this->catalog(), [
-            'about'    => $this->aboutData(),
+            'about'    => $about,
             'partners' => $partners,
             'faqs'     => $faqs,
-        ]));
+        ]), [
+            'title' => $about['heroTitle'] ?: 'About Us',
+            'description' => $about['heroSubtitle'] ?: null,
+            'image' => $about['storyImage'] ?: null,
+        ]);
     }
 
     /** Build the About content object from settings (admin-editable). */
@@ -141,14 +155,20 @@ class DesignController extends Controller
     public function blogShow(Request $request, \App\Models\BlogPost $post)
     {
         $post->incrementViews();
+        $detail = $this->blogDetail($post);
         return $this->serve('blog', array_merge($this->catalog(), [
-            'blogPost'  => $this->blogDetail($post),
+            'blogPost'  => $detail,
             'blogPosts' => $this->blogList(3, $post->id), // "recent posts" rail
-        ]));
+        ]), [
+            'title' => $detail['title'],
+            'description' => (string) ($post->excerpt ?: Str::limit(strip_tags((string) $post->content), 160)),
+            'image' => $detail['image'] ?: null,
+            'type'  => 'article',
+        ]);
     }
 
-    /** Read a design file and inject window.BOLETO_DATA overrides. */
-    private function serve(string $page, array $data)
+    /** Read a design file, inject window.BOLETO_DATA overrides and SEO meta tags. */
+    private function serve(string $page, array $data, array $seo = [])
     {
         $file = $page . '.html';
         abort_unless(in_array($file, self::PAGES, true), 404);
@@ -157,6 +177,7 @@ class DesignController extends Controller
         abort_unless(is_file($path), 404);
 
         $html = file_get_contents($path);
+        $html = $this->injectSeo($html, $seo);
 
         $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         // Neutralise "</script>" (and any "</…") inside the JSON so rich HTML
@@ -170,6 +191,94 @@ class DesignController extends Controller
         $html = preg_replace_callback('/(\}\)\(\);\s*<\/script>)/s', fn ($m) => $m[1] . "\n  " . $override, $html, 1);
 
         return response($html, 200)->header('Content-Type', 'text/html; charset=UTF-8');
+    }
+
+    /** Replace the page <title> with full SEO meta (description, keywords, OG, Twitter). */
+    private function injectSeo(string $html, array $seo): string
+    {
+        $d = $this->seoDefaults();
+        $site = $d['site_name'];
+
+        $title = ! empty($seo['title']) ? ($seo['title'] . ' — ' . $site) : $d['title_suffix'];
+        $desc  = \Illuminate\Support\Str::limit((string) ($seo['description'] ?? '') ?: $d['description'], 160, '');
+        $keys  = (string) ($seo['keywords'] ?? '') ?: $d['keywords'];
+        $image = (string) ($seo['image'] ?? '') ?: $d['og_image'];
+        $url   = (string) ($seo['url'] ?? '') ?: url()->current();
+        $type  = (string) ($seo['type'] ?? '') ?: 'website';
+
+        $e = fn ($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+        $meta = '<title>' . $e($title) . '</title>'
+            . "\n  <meta name=\"description\" content=\"" . $e($desc) . "\" />"
+            . "\n  <meta name=\"keywords\" content=\"" . $e($keys) . "\" />"
+            . "\n  <link rel=\"canonical\" href=\"" . $e($url) . "\" />"
+            . "\n  <meta property=\"og:type\" content=\"" . $e($type) . "\" />"
+            . "\n  <meta property=\"og:site_name\" content=\"" . $e($site) . "\" />"
+            . "\n  <meta property=\"og:title\" content=\"" . $e($title) . "\" />"
+            . "\n  <meta property=\"og:description\" content=\"" . $e($desc) . "\" />"
+            . "\n  <meta property=\"og:url\" content=\"" . $e($url) . "\" />"
+            . ($image ? "\n  <meta property=\"og:image\" content=\"" . $e($image) . "\" />" : '')
+            . "\n  <meta name=\"twitter:card\" content=\"summary_large_image\" />"
+            . "\n  <meta name=\"twitter:title\" content=\"" . $e($title) . "\" />"
+            . "\n  <meta name=\"twitter:description\" content=\"" . $e($desc) . "\" />"
+            . ($image ? "\n  <meta name=\"twitter:image\" content=\"" . $e($image) . "\" />" : '');
+
+        // Replace via callback so $-sequences in the values aren't treated as backrefs.
+        return preg_replace_callback('/<title>.*?<\/title>/s', fn ($m) => $meta, $html, 1);
+    }
+
+    /** SEO defaults from admin → Settings. */
+    private function seoDefaults(): array
+    {
+        $s = Setting::whereIn('key', ['seo_site_name', 'seo_title_suffix', 'seo_description', 'seo_keywords', 'seo_og_image'])
+            ->pluck('value', 'key');
+
+        return [
+            'site_name'    => (string) ($s['seo_site_name'] ?? 'Boleto'),
+            'title_suffix' => (string) ($s['seo_title_suffix'] ?? 'Boleto'),
+            'description'  => (string) ($s['seo_description'] ?? ''),
+            'keywords'     => (string) ($s['seo_keywords'] ?? ''),
+            'og_image'     => (string) ($this->img($s['seo_og_image'] ?? null) ?? ''),
+        ];
+    }
+
+    /** SEO for a movie detail page. */
+    private function movieSeo(?string $slug): array
+    {
+        if (! $slug) return [];
+        $m = Movie::where('slug', $slug)->first() ?: Movie::get()->first(fn ($x) => Str::slug($x->title) === $slug);
+        if (! $m) return [];
+        return [
+            'title' => $m->title,
+            'description' => (string) ($m->synopsis ?: $m->title . ' — book tickets now on Boleto.'),
+            'image' => $this->img($m->poster_image ?? $m->poster ?? $m->banner_image),
+            'type' => 'video.movie',
+        ];
+    }
+
+    /** SEO for an event or sport detail page. */
+    private function eventSeo(?string $slug): array
+    {
+        if (! $slug) return [];
+        $e = Event::where('slug', $slug)->first() ?: Event::get()->first(fn ($x) => Str::slug($x->title) === $slug);
+        if (! $e) {
+            $e = Sport::where('slug', $slug)->first() ?: Sport::get()->first(fn ($x) => Str::slug($x->title) === $slug);
+        }
+        if (! $e) return [];
+        return [
+            'title' => $e->title,
+            'description' => (string) ($e->description ?: $e->title . ' — book tickets now on Boleto.'),
+            'image' => $this->img($e->banner_image),
+            'type' => 'website',
+        ];
+    }
+
+    /** SEO for the /movies, /events, /sports listing pages. */
+    private function listSeo(Request $request): array
+    {
+        $path = $request->path();
+        if (str_contains($path, 'movies')) return ['title' => 'All Movies', 'description' => 'Browse and book tickets for the latest movies on Boleto.'];
+        if (str_contains($path, 'sports')) return ['title' => 'All Sports', 'description' => 'Browse and book tickets for live sports on Boleto.'];
+        return ['title' => 'All Events', 'description' => 'Browse and book tickets for live events on Boleto.'];
     }
 
     /** Resolve a stored image path to an absolute URL (mirrors the API helper). */
