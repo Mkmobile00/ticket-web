@@ -41,7 +41,10 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            // Host-relative by default so storage/file-manager URLs work on any
+            // host (127.0.0.1, LAN IP, production) without depending on APP_URL.
+            // Set ASSET_URL to an absolute base (e.g. a CDN) in production if needed.
+            'url' => rtrim(env('ASSET_URL', ''), '/').'/storage',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
