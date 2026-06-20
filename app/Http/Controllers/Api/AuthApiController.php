@@ -164,8 +164,9 @@ class AuthApiController extends Controller
 
         // Verify the token was minted for THIS app (audience). Without this, a token
         // issued to any other Google OAuth client would be accepted -> account takeover.
-        // Enforced only when a client id is configured (set GOOGLE_CLIENT_ID in production).
-        $expectedAud = config('services.google.client_id');
+        // Client ID comes from admin Settings (fallback to env); enforced when set.
+        $expectedAud = \App\Models\Setting::where('key', 'google_client_id')->value('value')
+            ?: config('services.google.client_id');
         if ($expectedAud && ($g['aud'] ?? null) !== $expectedAud) {
             return response()->json(['message' => 'Invalid Google token.'], 401);
         }

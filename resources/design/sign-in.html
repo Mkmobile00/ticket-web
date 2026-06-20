@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
 
 /* ===== styles.css ===== */
@@ -1311,6 +1312,29 @@ function AuthPage() {
   const [msg, setMsg] = a_us(null);
   const set = (k, v) => setF(s => ({ ...s, [k]: v }));
   const go = (m) => { setMode(m); setErr(null); setMsg(null); };
+  const gbtn = React.useRef(null);
+
+  // Render the Google Sign-In button (only when a client ID is configured).
+  a_ue(() => {
+    const cid = window.BOLETO_DATA.googleClientId || "";
+    if (!cid || (mode !== "in" && mode !== "up")) return;
+    let tries = 0;
+    const t = setInterval(() => {
+      if (window.google && window.google.accounts && window.google.accounts.id) {
+        clearInterval(t);
+        window.google.accounts.id.initialize({
+          client_id: cid,
+          callback: (resp) => {
+            fetch("/design-api/google", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ id_token: resp.credential }) })
+              .then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.message || "Google sign-in failed."); location.href = "/account"; })
+              .catch(e => setErr(e.message));
+          },
+        });
+        if (gbtn.current) { gbtn.current.innerHTML = ""; window.google.accounts.id.renderButton(gbtn.current, { theme: "outline", size: "large", width: 320 }); }
+      } else if (++tries > 40) { clearInterval(t); }
+    }, 150);
+    return () => clearInterval(t);
+  }, [mode]);
 
   // Arriving from a verification gate (e.g. tried to book unverified): open the
   // OTP step and send a fresh code.
@@ -1363,6 +1387,12 @@ function AuthPage() {
             {err && <p className="po-s" style={{ color: "#e5484d", margin: "0 0 10px" }}>{err}</p>}
             <button className="btn-cta co-pay-btn" type="submit" disabled={busy}>{busy ? "Please wait…" : ({ in: "Sign In", up: "Create Account", otp: "Verify", forgot: "Send code", reset: "Reset password" }[mode])}</button>
           </form>
+          {(mode === "in" || mode === "up") && window.BOLETO_DATA.googleClientId ? (
+            <div style={{ marginTop: 16 }}>
+              <p className="po-s" style={{ textAlign: "center", margin: "0 0 10px" }}>or continue with</p>
+              <div ref={gbtn} style={{ display: "flex", justifyContent: "center" }} />
+            </div>
+          ) : null}
           <p className="po-s" style={{ marginTop: 14, textAlign: "center" }}>
             {mode === "in" && <>New to BOLETO? <a style={{ color: "var(--accent-d)", cursor: "pointer", fontWeight: 700 }} onClick={() => go("up")}>Create an account</a> · <a style={{ color: "var(--accent-d)", cursor: "pointer", fontWeight: 700 }} onClick={() => go("forgot")}>Forgot password?</a></>}
             {mode === "up" && <>Already have an account? <a style={{ color: "var(--accent-d)", cursor: "pointer", fontWeight: 700 }} onClick={() => go("in")}>Sign in</a></>}

@@ -334,6 +334,7 @@ class DesignController extends Controller
             'footer'       => $this->footerData(),
             'social'       => $this->socialLinks(),
             'offers'       => $this->offersList(),
+            'googleClientId' => (string) (Setting::where('key', 'google_client_id')->value('value') ?: config('services.google.client_id') ?: ''),
             'sidebarBanners' => $this->sidebarBanners(),
         ];
     }

@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Mail\OtpMail;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 /**
  * Session-based customer auth for the BOLETO design (CSRF-exempt design-api/*).
@@ -123,6 +126,55 @@ class DesignAuthController extends Controller
         $user->forceFill(['password' => Hash::make($request->password)])->save();
         cache()->forget('pwreset:' . $user->id);
         return response()->json(['message' => 'Password has been reset. Please sign in.']);
+    }
+
+    /** POST /design-api/google  { id_token } — sign in/up via Google, session-based. */
+    public function google(Request $request)
+    {
+        $request->validate(['id_token' => 'required|string']);
+
+        try {
+            $resp = Http::acceptJson()->get('https://oauth2.googleapis.com/tokeninfo', ['id_token' => $request->id_token]);
+        } catch (\Throwable $e) {
+            return response()->json(['message' => 'Could not verify Google sign-in.'], 502);
+        }
+
+        $g = $resp->json();
+        if (! $resp->successful() || empty($g['email']) || ($g['email_verified'] ?? 'false') === 'false') {
+            return response()->json(['message' => 'Invalid Google sign-in.'], 401);
+        }
+
+        $aud = $this->googleClientId();
+        if ($aud && ($g['aud'] ?? null) !== $aud) {
+            return response()->json(['message' => 'Invalid Google sign-in.'], 401);
+        }
+
+        $user = User::firstOrCreate(
+            ['email' => $g['email']],
+            ['name' => $g['name'] ?? $g['email'], 'password' => Hash::make(Str::random(32)), 'role' => 'customer']
+        );
+        if ($user->is_admin) {
+            return response()->json(['message' => 'Admins sign in via the admin panel.'], 422);
+        }
+        // Google verifies the email, so the account is verified.
+        if (! $user->email_verified_at) {
+            $user->forceFill(['email_verified_at' => now()])->save();
+        }
+
+        Auth::login($user, true);
+        $request->session()->regenerate();
+        return response()->json(['user' => $this->payload($user)]);
+    }
+
+    /** Google OAuth Web Client ID from admin Settings (fallback env). */
+    private function googleClientId(): ?string
+    {
+        try {
+            $v = Setting::where('key', 'google_client_id')->value('value');
+        } catch (\Throwable $e) {
+            $v = null;
+        }
+        return ($v ?: config('services.google.client_id')) ?: null;
     }
 
     /** POST /design-api/logout */

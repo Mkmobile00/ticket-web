@@ -45,6 +45,7 @@ Route::get('/design-api/search', [\App\Http\Controllers\DesignController::class,
 
 // Customer auth for the design (session-based, CSRF-exempt; protected by Origin check).
 Route::post('/design-api/login', [\App\Http\Controllers\DesignAuthController::class, 'login'])->middleware('throttle:login');
+Route::post('/design-api/google', [\App\Http\Controllers\DesignAuthController::class, 'google'])->middleware('throttle:login');
 Route::post('/design-api/register', [\App\Http\Controllers\DesignAuthController::class, 'register'])->middleware('throttle:register');
 Route::post('/design-api/verify', [\App\Http\Controllers\DesignAuthController::class, 'verify'])->middleware('throttle:otp');
 Route::post('/design-api/verify/send', [\App\Http\Controllers\DesignAuthController::class, 'sendOtp'])->middleware('throttle:otp');
