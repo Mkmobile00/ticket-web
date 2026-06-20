@@ -54,6 +54,11 @@ class DesignController extends Controller
             $seo = $this->listSeo($request);
         }
 
+        // Transactional / personal pages must never be indexed.
+        if (in_array($page, ['showtimes', 'seats', 'checkout', 'event-seats', 'event-checkout', 'sign-in', 'account', 'search'], true)) {
+            $seo['noindex'] = true;
+        }
+
         return $this->serve($page, $data, $seo);
     }
 
@@ -114,6 +119,20 @@ class DesignController extends Controller
             ->map(fn ($f) => ['q' => $f->question, 'a' => $f->answer])->all();
 
         $about = $this->aboutData();
+
+        $jsonld = [$this->breadcrumb([['About', url()->current()]])];
+        if ($faqs) {
+            $jsonld[] = [
+                '@context' => 'https://schema.org',
+                '@type'    => 'FAQPage',
+                'mainEntity' => array_map(fn ($f) => [
+                    '@type' => 'Question',
+                    'name'  => $f['q'],
+                    'acceptedAnswer' => ['@type' => 'Answer', 'text' => strip_tags((string) $f['a'])],
+                ], $faqs),
+            ];
+        }
+
         return $this->serve('about', array_merge($this->catalog(), [
             'about'    => $about,
             'partners' => $partners,
@@ -122,6 +141,7 @@ class DesignController extends Controller
             'title' => $about['heroTitle'] ?: 'About Us',
             'description' => $about['heroSubtitle'] ?: null,
             'image' => $about['storyImage'] ?: null,
+            'jsonld' => $jsonld,
         ]);
     }
 
@@ -156,14 +176,32 @@ class DesignController extends Controller
     {
         $post->incrementViews();
         $detail = $this->blogDetail($post);
+        $image = $detail['image'] ?: null;
+        $desc  = (string) ($post->meta_description ?: $post->excerpt ?: Str::limit(strip_tags((string) $post->content), 160));
+
+        $article = array_filter([
+            '@context'      => 'https://schema.org',
+            '@type'         => 'BlogPosting',
+            'headline'      => Str::limit($post->title, 110, ''),
+            'description'   => Str::limit(strip_tags((string) ($post->excerpt ?: $post->content)), 200, '') ?: null,
+            'image'         => $image,
+            'datePublished' => ($post->published_at ?? $post->created_at)?->toIso8601String(),
+            'dateModified'  => $post->updated_at?->toIso8601String(),
+            'author'        => ['@type' => 'Person', 'name' => (string) ($post->author?->name ?: $this->seoDefaults()['site_name'])],
+            'publisher'     => ['@type' => 'Organization', 'name' => $this->seoDefaults()['site_name']],
+            'mainEntityOfPage' => url()->current(),
+        ]);
+
         return $this->serve('blog', array_merge($this->catalog(), [
             'blogPost'  => $detail,
             'blogPosts' => $this->blogList(3, $post->id), // "recent posts" rail
         ]), [
-            'title' => $detail['title'],
-            'description' => (string) ($post->excerpt ?: Str::limit(strip_tags((string) $post->content), 160)),
-            'image' => $detail['image'] ?: null,
+            'title' => (string) ($post->meta_title ?: $detail['title']),
+            'description' => $desc,
+            'keywords' => (string) $post->meta_keywords ?: null,
+            'image' => $image,
             'type'  => 'article',
+            'jsonld' => [$article, $this->breadcrumb([['Blog', url('/blog')], [$post->title, url()->current()]])],
         ]);
     }
 
@@ -193,7 +231,7 @@ class DesignController extends Controller
         return response($html, 200)->header('Content-Type', 'text/html; charset=UTF-8');
     }
 
-    /** Replace the page <title> with full SEO meta (description, keywords, OG, Twitter). */
+    /** Replace the page <title> with full SEO meta (description, keywords, robots, OG, Twitter, JSON-LD). */
     private function injectSeo(string $html, array $seo): string
     {
         $d = $this->seoDefaults();
@@ -205,32 +243,84 @@ class DesignController extends Controller
         $image = (string) ($seo['image'] ?? '') ?: $d['og_image'];
         $url   = (string) ($seo['url'] ?? '') ?: url()->current();
         $type  = (string) ($seo['type'] ?? '') ?: 'website';
+        $robots = ! empty($seo['noindex']) ? 'noindex, follow' : 'index, follow, max-image-preview:large';
 
         $e = fn ($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
         $meta = '<title>' . $e($title) . '</title>'
             . "\n  <meta name=\"description\" content=\"" . $e($desc) . "\" />"
             . "\n  <meta name=\"keywords\" content=\"" . $e($keys) . "\" />"
+            . "\n  <meta name=\"robots\" content=\"" . $e($robots) . "\" />"
+            . "\n  <meta name=\"author\" content=\"" . $e($site) . "\" />"
+            . ($d['theme_color'] ? "\n  <meta name=\"theme-color\" content=\"" . $e($d['theme_color']) . "\" />" : '')
+            . ($d['favicon'] ? "\n  <link rel=\"icon\" href=\"" . $e($d['favicon']) . "\" />" : '')
             . "\n  <link rel=\"canonical\" href=\"" . $e($url) . "\" />"
             . "\n  <meta property=\"og:type\" content=\"" . $e($type) . "\" />"
             . "\n  <meta property=\"og:site_name\" content=\"" . $e($site) . "\" />"
+            . "\n  <meta property=\"og:locale\" content=\"" . $e($d['locale']) . "\" />"
             . "\n  <meta property=\"og:title\" content=\"" . $e($title) . "\" />"
             . "\n  <meta property=\"og:description\" content=\"" . $e($desc) . "\" />"
             . "\n  <meta property=\"og:url\" content=\"" . $e($url) . "\" />"
-            . ($image ? "\n  <meta property=\"og:image\" content=\"" . $e($image) . "\" />" : '')
+            . ($image ? "\n  <meta property=\"og:image\" content=\"" . $e($image) . "\" />"
+                      . "\n  <meta property=\"og:image:alt\" content=\"" . $e($title) . "\" />" : '')
             . "\n  <meta name=\"twitter:card\" content=\"summary_large_image\" />"
+            . ($d['twitter'] ? "\n  <meta name=\"twitter:site\" content=\"" . $e($d['twitter']) . "\" />" : '')
             . "\n  <meta name=\"twitter:title\" content=\"" . $e($title) . "\" />"
             . "\n  <meta name=\"twitter:description\" content=\"" . $e($desc) . "\" />"
             . ($image ? "\n  <meta name=\"twitter:image\" content=\"" . $e($image) . "\" />" : '');
+
+        // Structured data (schema.org JSON-LD): always site-wide Organization +
+        // WebSite, plus any page-specific graph passed in $seo['jsonld'].
+        $graph = array_merge($this->siteJsonLd($d, $site), (array) ($seo['jsonld'] ?? []));
+        foreach ($graph as $node) {
+            $j = json_encode($node, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            if ($j !== false) {
+                $meta .= "\n  <script type=\"application/ld+json\">" . str_replace('</', '<\/', $j) . "</script>";
+            }
+        }
 
         // Replace via callback so $-sequences in the values aren't treated as backrefs.
         return preg_replace_callback('/<title>.*?<\/title>/s', fn ($m) => $meta, $html, 1);
     }
 
+    /** Site-wide structured data: Organization + WebSite (with on-site SearchAction). */
+    private function siteJsonLd(array $d, string $site): array
+    {
+        $home = url('/');
+        $org = [
+            '@context' => 'https://schema.org',
+            '@type'    => 'Organization',
+            'name'     => $site,
+            'url'      => $home,
+        ];
+        if ($d['og_image']) $org['logo'] = $d['og_image'];
+        $social = array_values(array_filter(array_map(
+            fn ($x) => is_array($x) ? ($x['url'] ?? null) : $x,
+            $this->socialLinks()
+        )));
+        if ($social) $org['sameAs'] = $social;
+
+        $website = [
+            '@context' => 'https://schema.org',
+            '@type'    => 'WebSite',
+            'name'     => $site,
+            'url'      => $home,
+            'potentialAction' => [
+                '@type'       => 'SearchAction',
+                'target'      => ['@type' => 'EntryPoint', 'urlTemplate' => $home . '?q={search_term_string}'],
+                'query-input' => 'required name=search_term_string',
+            ],
+        ];
+
+        return [$org, $website];
+    }
+
     /** SEO defaults from admin → Settings. */
     private function seoDefaults(): array
     {
-        $s = Setting::whereIn('key', ['seo_site_name', 'seo_title_suffix', 'seo_description', 'seo_keywords', 'seo_og_image'])
-            ->pluck('value', 'key');
+        $s = Setting::whereIn('key', [
+            'seo_site_name', 'seo_title_suffix', 'seo_description', 'seo_keywords',
+            'seo_og_image', 'seo_locale', 'seo_theme_color', 'seo_twitter', 'seo_favicon_image',
+        ])->pluck('value', 'key');
 
         return [
             'site_name'    => (string) ($s['seo_site_name'] ?? 'Boleto'),
@@ -238,38 +328,105 @@ class DesignController extends Controller
             'description'  => (string) ($s['seo_description'] ?? ''),
             'keywords'     => (string) ($s['seo_keywords'] ?? ''),
             'og_image'     => (string) ($this->img($s['seo_og_image'] ?? null) ?? ''),
+            'locale'       => (string) ($s['seo_locale'] ?? 'en_US'),
+            'theme_color'  => (string) ($s['seo_theme_color'] ?? ''),
+            'twitter'      => (string) ($s['seo_twitter'] ?? ''),
+            'favicon'      => (string) ($this->img($s['seo_favicon_image'] ?? null) ?? ''),
         ];
     }
 
-    /** SEO for a movie detail page. */
+    /** SEO for a movie detail page (admin meta overrides + Movie/Breadcrumb JSON-LD). */
     private function movieSeo(?string $slug): array
     {
         if (! $slug) return [];
         $m = Movie::where('slug', $slug)->first() ?: Movie::get()->first(fn ($x) => Str::slug($x->title) === $slug);
         if (! $m) return [];
+
+        $title = (string) ($m->meta_title ?: $m->title);
+        $desc  = (string) ($m->meta_description ?: $m->synopsis ?: $m->title . ' — book tickets now on Boleto.');
+        $image = $this->img($m->poster_image ?? $m->poster ?? $m->banner_image);
+
+        $node = array_filter([
+            '@context'    => 'https://schema.org',
+            '@type'       => 'Movie',
+            'name'        => $m->title,
+            'description' => Str::limit(strip_tags((string) ($m->synopsis ?? '')), 300, '') ?: null,
+            'image'       => $image ?: null,
+            'datePublished' => $m->release_date?->toDateString(),
+            'duration'    => $m->duration_minutes ? 'PT' . (int) $m->duration_minutes . 'M' : null,
+            'url'         => url('/movie?m=' . urlencode($m->slug ?: Str::slug($m->title))),
+        ]);
+        if ($m->user_rating || $m->rating_audience) {
+            $node['aggregateRating'] = array_filter([
+                '@type' => 'AggregateRating',
+                'ratingValue' => (string) ($m->user_rating ?: $m->rating_audience),
+                'bestRating' => '10',
+            ]);
+        }
+
         return [
-            'title' => $m->title,
-            'description' => (string) ($m->synopsis ?: $m->title . ' — book tickets now on Boleto.'),
-            'image' => $this->img($m->poster_image ?? $m->poster ?? $m->banner_image),
+            'title' => $title,
+            'description' => $desc,
+            'keywords' => (string) $m->meta_keywords ?: null,
+            'image' => $image,
             'type' => 'video.movie',
+            'jsonld' => [$node, $this->breadcrumb([['Movies', url('/movies')], [$m->title, url()->current()]])],
         ];
     }
 
-    /** SEO for an event or sport detail page. */
+    /** SEO for an event or sport detail page (admin overrides + Event/Breadcrumb JSON-LD). */
     private function eventSeo(?string $slug): array
     {
         if (! $slug) return [];
+        $kind = 'Events';
         $e = Event::where('slug', $slug)->first() ?: Event::get()->first(fn ($x) => Str::slug($x->title) === $slug);
         if (! $e) {
+            $kind = 'Sports';
             $e = Sport::where('slug', $slug)->first() ?: Sport::get()->first(fn ($x) => Str::slug($x->title) === $slug);
         }
         if (! $e) return [];
+
+        $title = (string) ($e->meta_title ?: $e->title);
+        $desc  = (string) ($e->meta_description ?: $e->description ?: $e->title . ' — book tickets now on Boleto.');
+        $image = $this->img($e->banner_image);
+        $date  = ($e->event_date ?? $e->sport_date)?->toDateString();
+        $place = (string) ($e->venue ?? $e->address ?? '');
+
+        $node = array_filter([
+            '@context'    => 'https://schema.org',
+            '@type'       => $kind === 'Sports' ? 'SportsEvent' : 'Event',
+            'name'        => $e->title,
+            'description' => Str::limit(strip_tags((string) ($e->description ?? '')), 300, '') ?: null,
+            'image'       => $image ?: null,
+            'startDate'   => $date && $e->start_time ? $date . 'T' . $e->start_time : $date,
+            'eventStatus' => 'https://schema.org/EventScheduled',
+            'eventAttendanceMode' => 'https://schema.org/OfflineEventAttendanceMode',
+            'url'         => url('/event?e=' . urlencode($e->slug ?: Str::slug($e->title))),
+        ]);
+        if ($place) {
+            $node['location'] = ['@type' => 'Place', 'name' => $place, 'address' => $place];
+        }
+        $node['organizer'] = ['@type' => 'Organization', 'name' => (string) ($e->organizer ?: $this->seoDefaults()['site_name'])];
+
         return [
-            'title' => $e->title,
-            'description' => (string) ($e->description ?: $e->title . ' — book tickets now on Boleto.'),
-            'image' => $this->img($e->banner_image),
+            'title' => $title,
+            'description' => $desc,
+            'keywords' => (string) $e->meta_keywords ?: null,
+            'image' => $image,
             'type' => 'website',
+            'jsonld' => [$node, $this->breadcrumb([[$kind, url('/' . strtolower($kind))], [$e->title, url()->current()]])],
         ];
+    }
+
+    /** Build a schema.org BreadcrumbList from [[name, url], ...] (Home prepended). */
+    private function breadcrumb(array $crumbs): array
+    {
+        array_unshift($crumbs, ['Home', url('/')]);
+        $items = [];
+        foreach ($crumbs as $i => $c) {
+            $items[] = ['@type' => 'ListItem', 'position' => $i + 1, 'name' => $c[0], 'item' => $c[1]];
+        }
+        return ['@context' => 'https://schema.org', '@type' => 'BreadcrumbList', 'itemListElement' => $items];
     }
 
     /** SEO for the /movies, /events, /sports listing pages. */

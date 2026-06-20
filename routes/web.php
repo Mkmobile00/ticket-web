@@ -21,6 +21,10 @@ use Illuminate\Support\Facades\Route;
 // Original dynamic home is still available via HomeController if needed.
 Route::get('/', [\App\Http\Controllers\DesignController::class, 'page'])->name('home');
 
+// SEO: dynamic sitemap + robots (built from the live catalog).
+Route::get('/sitemap.xml', [\App\Http\Controllers\SeoController::class, 'sitemap'])->name('sitemap');
+Route::get('/robots.txt', [\App\Http\Controllers\SeoController::class, 'robots'])->name('robots');
+
 $designPages = 'index|movie|showtimes|seats|checkout|event|event-seats|event-checkout|sign-in|account|search';
 
 // Clean URLs: /movie, /showtimes, /seats, /checkout, /event, ...

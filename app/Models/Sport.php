@@ -13,7 +13,8 @@ class Sport extends Model
 
     protected $fillable = [
         'title', 'slug', 'description', 'banner_image', 'detail_image', 'trailer_url', 'team_home', 'team_away',
-        'sport_date', 'start_time', 'venue', 'city_id', 'status', 'seat_layout'
+        'sport_date', 'start_time', 'venue', 'city_id', 'status', 'seat_layout',
+        'meta_title', 'meta_description', 'meta_keywords',
     ];
 
     protected $casts = [
