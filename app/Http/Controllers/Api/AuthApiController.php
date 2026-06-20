@@ -212,8 +212,9 @@ class AuthApiController extends Controller
     {
         if (! $to) return;
         try {
-            // Queue so the HTTP request returns immediately (a queue worker sends it).
-            Mail::to($to)->queue($mailable);
+            // Send synchronously (not queued) so time-sensitive OTP / verification
+            // emails go out immediately and don't depend on a running queue worker.
+            Mail::to($to)->send($mailable);
         } catch (\Throwable $e) {
             // Redact the recipient address — don't write PII to logs.
             Log::warning('API mail failed', ['to_hash' => hash('sha256', $to), 'error' => $e->getMessage()]);
