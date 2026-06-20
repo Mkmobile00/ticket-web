@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -26,7 +27,8 @@ class SmsService
         $phone = trim((string) $phone);
         if ($phone === '') return false;
 
-        $driver = config('services.sms.driver', 'log');
+        // Admin-managed setting wins; falls back to config/env, then 'log'.
+        $driver = $this->setting('sms_driver') ?: config('services.sms.driver', 'log');
 
         try {
             return match ($driver) {
@@ -70,13 +72,37 @@ class SmsService
     private function sparrow(string $phone, string $message): bool
     {
         $c = config('services.sms.sparrow');
+        $token = $this->setting('sms_sparrow_token') ?: ($c['token'] ?? '');
+        $from  = $this->setting('sms_sparrow_from') ?: ($c['from'] ?? 'Demo');
+
+        if ($token === '') {
+            Log::warning('Sparrow SMS: no token configured (set it in admin → Settings).');
+            return false;
+        }
+
         $res = Http::asForm()->post('https://api.sparrowsms.com/v2/sms/', [
-            'token' => $c['token'] ?? '',
-            'from'  => $c['from'] ?? 'Demo',
+            'token' => $token,
+            'from'  => $from,
             'to'    => $phone,
             'text'  => $message,
         ]);
-        return $res->successful();
+        // Sparrow returns 200 + {response_code:200,...} on success.
+        $ok = $res->successful() && (int) ($res->json('response_code') ?? 0) === 200;
+        if (! $ok) {
+            Log::warning('Sparrow SMS not sent', ['status' => $res->status(), 'resp' => $res->json()]);
+        }
+        return $ok;
+    }
+
+    /** Read an admin-managed SMS setting (null/empty if unset). */
+    private function setting(string $key): ?string
+    {
+        try {
+            $v = Setting::where('key', $key)->value('value');
+            return ($v === null || $v === '') ? null : (string) $v;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     private function twilio(string $phone, string $message): bool

@@ -11,7 +11,14 @@
                 @php $isImage = Str::endsWith($key, ['_bg', '_image', '_logo']); @endphp
                 <div class="mb-3">
                     <label class="form-label">{{ ucwords(str_replace('_', ' ', $key)) }}</label>
-                    @if ($isImage)
+                    @if ($key === 'sms_driver')
+                        <select class="form-select" name="settings[{{ $key }}]">
+                            @foreach (['log' => 'Log only (dev — writes OTP to log)', 'sparrow' => 'Sparrow SMS (Nepal)', 'twilio' => 'Twilio', 'msg91' => 'MSG91', 'textbelt' => 'Textbelt (free demo)'] as $optVal => $optLabel)
+                                <option value="{{ $optVal }}" @selected($setting->value === $optVal)>{{ $optLabel }}</option>
+                            @endforeach
+                        </select>
+                        <small class="text-muted">Choose the SMS gateway. Use "Sparrow SMS" once you've entered the token below.</small>
+                    @elseif ($isImage)
                         @if ($setting->value)
                             <div class="mb-2"><img src="{{ \App\Models\Setting::image($key) }}" alt="" style="max-height:90px;border-radius:6px;border:1px solid #eee;"></div>
                         @endif
