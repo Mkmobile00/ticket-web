@@ -1344,7 +1344,7 @@ function CheckoutPage() {
     const addons = Object.keys(qty).filter(id => qty[id] > 0).map(id => ({ id: +id, qty: qty[id] }));
     fetch("/design-api/checkout", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({ type: bk.type || "showtime", id: bk.seatableId, seats, method: "card", addons, promo: promo ? promo.code : null }) })
-      .then(async r => { const d = await r.json(); if (r.status === 401 && d.login_required) { location.href = "/sign-in"; throw new Error("Please sign in to book."); } if (!r.ok) throw new Error(d.message || "Payment failed."); return d; })
+      .then(async r => { const d = await r.json(); if (r.status === 401 && d.login_required) { location.href = "/sign-in"; throw new Error("Please sign in to book."); } if (r.status === 403 && d.verification_required) { location.href = "/sign-in?verify=1"; throw new Error("Please verify your account."); } if (!r.ok) throw new Error(d.message || "Payment failed."); return d; })
       .then(d => { setRes(d); setDone(true); window.scrollTo({ top: 0, behavior: "smooth" }); })
       .catch(e => setErr(e.message)).finally(() => setBusy(false));
   };

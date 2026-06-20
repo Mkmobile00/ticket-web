@@ -197,6 +197,13 @@ class DesignBookingController extends Controller
                 'login_required' => true,
             ], 401);
         }
+        // ...and verified (mirrors the app's verify gate).
+        if (! $user->email_verified_at) {
+            return response()->json([
+                'message' => 'Please verify your account before booking.',
+                'verification_required' => true,
+            ], 403);
+        }
         $owner = 'user:' . $user->id;
 
         // 1) lock + pending booking (throws ValidationException on conflict)

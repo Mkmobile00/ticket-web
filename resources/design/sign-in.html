@@ -1301,7 +1301,7 @@ Object.assign(window, { qparam, getMovie, getEvent, isSport, saveBooking, getBoo
   </script>
   <script type="text/babel">
 /* BOLETO — Customer sign in / sign up */
-const { useState: a_us } = React;
+const { useState: a_us, useEffect: a_ue } = React;
 
 function AuthPage() {
   const [mode, setMode] = a_us("in"); // in | up | otp | forgot | reset
@@ -1311,6 +1311,16 @@ function AuthPage() {
   const [msg, setMsg] = a_us(null);
   const set = (k, v) => setF(s => ({ ...s, [k]: v }));
   const go = (m) => { setMode(m); setErr(null); setMsg(null); };
+
+  // Arriving from a verification gate (e.g. tried to book unverified): open the
+  // OTP step and send a fresh code.
+  a_ue(() => {
+    if (new URLSearchParams(location.search).get("verify") === "1") {
+      setMode("otp");
+      fetch("/design-api/verify/send", { method: "POST", headers: { Accept: "application/json" } })
+        .then(r => r.json()).then(d => setMsg(d.message || "We sent a code to your email and phone.")).catch(() => {});
+    }
+  }, []);
 
   const post = (url, body) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(body) })
     .then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.message || (d.errors && Object.values(d.errors)[0][0]) || "Something went wrong."); return d; });
