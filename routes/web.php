@@ -46,6 +46,10 @@ Route::get('/design-api/search', [\App\Http\Controllers\DesignController::class,
 // Customer auth for the design (session-based, CSRF-exempt; protected by Origin check).
 Route::post('/design-api/login', [\App\Http\Controllers\DesignAuthController::class, 'login'])->middleware('throttle:login');
 Route::post('/design-api/register', [\App\Http\Controllers\DesignAuthController::class, 'register'])->middleware('throttle:register');
+Route::post('/design-api/verify', [\App\Http\Controllers\DesignAuthController::class, 'verify'])->middleware('throttle:otp');
+Route::post('/design-api/verify/send', [\App\Http\Controllers\DesignAuthController::class, 'sendOtp'])->middleware('throttle:otp');
+Route::post('/design-api/password/forgot', [\App\Http\Controllers\DesignAuthController::class, 'forgotPassword'])->middleware('throttle:login');
+Route::post('/design-api/password/reset', [\App\Http\Controllers\DesignAuthController::class, 'resetPassword'])->middleware('throttle:login');
 Route::post('/design-api/logout', [\App\Http\Controllers\DesignAuthController::class, 'logout']);
 Route::get('/design-api/profile', [\App\Http\Controllers\DesignAuthController::class, 'profile']);
 Route::post('/design-api/profile', [\App\Http\Controllers\DesignAuthController::class, 'updateProfile']);

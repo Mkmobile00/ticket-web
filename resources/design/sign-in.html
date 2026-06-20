@@ -1304,40 +1304,60 @@ Object.assign(window, { qparam, getMovie, getEvent, isSport, saveBooking, getBoo
 const { useState: a_us } = React;
 
 function AuthPage() {
-  const [mode, setMode] = a_us("in"); // in | up
-  const [f, setF] = a_us({ name: "", email: "", password: "", password_confirmation: "" });
+  const [mode, setMode] = a_us("in"); // in | up | otp | forgot | reset
+  const [f, setF] = a_us({ name: "", email: "", phone: "", password: "", password_confirmation: "", identifier: "", code: "" });
   const [busy, setBusy] = a_us(false);
   const [err, setErr] = a_us(null);
+  const [msg, setMsg] = a_us(null);
   const set = (k, v) => setF(s => ({ ...s, [k]: v }));
+  const go = (m) => { setMode(m); setErr(null); setMsg(null); };
+
+  const post = (url, body) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(body) })
+    .then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.message || (d.errors && Object.values(d.errors)[0][0]) || "Something went wrong."); return d; });
 
   const submit = (e) => {
-    e.preventDefault(); setBusy(true); setErr(null);
-    const url = mode === "in" ? "/design-api/login" : "/design-api/register";
-    const body = mode === "in" ? { email: f.email, password: f.password } : f;
-    fetch(url, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(body) })
-      .then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.message || (d.errors && Object.values(d.errors)[0][0]) || "Something went wrong."); return d; })
-      .then(() => { location.href = "/account"; })
-      .catch(e => setErr(e.message)).finally(() => setBusy(false));
+    e.preventDefault(); setBusy(true); setErr(null); setMsg(null);
+    let p;
+    if (mode === "in") p = post("/design-api/login", { email: f.email, password: f.password }).then(() => location.href = "/account");
+    else if (mode === "up") p = post("/design-api/register", { name: f.name, email: f.email, phone: f.phone, password: f.password, password_confirmation: f.password_confirmation }).then(() => go("otp"));
+    else if (mode === "otp") p = post("/design-api/verify", { code: f.code }).then(() => location.href = "/account");
+    else if (mode === "forgot") p = post("/design-api/password/forgot", { identifier: f.identifier }).then(d => { setMode("reset"); setMsg(d.message); });
+    else p = post("/design-api/password/reset", { identifier: f.identifier, code: f.code, password: f.password, password_confirmation: f.password_confirmation }).then(d => { setMode("in"); setMsg(d.message); });
+    p.catch(e => setErr(e.message)).finally(() => setBusy(false));
   };
+
+  const resend = () => { setBusy(true); setErr(null); post("/design-api/verify/send", {}).then(d => setMsg(d.message)).catch(e => setErr(e.message)).finally(() => setBusy(false)); };
+
+  const titles = { in: "Welcome back", up: "Join BOLETO", otp: "Verify your account", forgot: "Reset password", reset: "Reset password" };
+  const banner = { in: "Sign In", up: "Create Account", otp: "Verify Account", forgot: "Reset Password", reset: "Reset Password" };
+  const fld = { marginBottom: 12 };
 
   return (
     <PageShell>
-      <PageBanner title={mode === "in" ? "Sign In" : "Create Account"} sub="BOLETO Account" />
+      <PageBanner title={banner[mode]} sub="BOLETO Account" />
       <section className="checkout"><div className="wrap" style={{ maxWidth: 480 }}>
         <div className="co-card">
-          <h3>{mode === "in" ? "Welcome back" : "Join BOLETO"}</h3>
+          <h3>{titles[mode]}</h3>
+          {mode === "otp" && <p className="po-s" style={{ margin: "0 0 14px" }}>Enter the 6-digit code we sent to your email and phone.</p>}
+          {mode === "forgot" && <p className="po-s" style={{ margin: "0 0 14px" }}>Enter your email or phone number and we'll send a reset code.</p>}
+          {mode === "reset" && <p className="po-s" style={{ margin: "0 0 14px" }}>Enter the code we sent and choose a new password.</p>}
           <form onSubmit={submit}>
-            {mode === "up" && <div className="fld full" style={{ marginBottom: 12 }}><label>Full name</label><input value={f.name} onChange={e => set("name", e.target.value)} required /></div>}
-            <div className="fld full" style={{ marginBottom: 12 }}><label>Email</label><input type="email" value={f.email} onChange={e => set("email", e.target.value)} required /></div>
-            <div className="fld full" style={{ marginBottom: 12 }}><label>Password</label><input type="password" value={f.password} onChange={e => set("password", e.target.value)} required /></div>
-            {mode === "up" && <div className="fld full" style={{ marginBottom: 12 }}><label>Confirm password</label><input type="password" value={f.password_confirmation} onChange={e => set("password_confirmation", e.target.value)} required /></div>}
+            {mode === "up" && <div className="fld full" style={fld}><label>Full name</label><input value={f.name} onChange={e => set("name", e.target.value)} required /></div>}
+            {(mode === "in" || mode === "up") && <div className="fld full" style={fld}><label>Email</label><input type="email" value={f.email} onChange={e => set("email", e.target.value)} required /></div>}
+            {mode === "up" && <div className="fld full" style={fld}><label>Phone number</label><input type="tel" value={f.phone} onChange={e => set("phone", e.target.value)} required /></div>}
+            {mode === "forgot" && <div className="fld full" style={fld}><label>Email or phone</label><input value={f.identifier} onChange={e => set("identifier", e.target.value)} required /></div>}
+            {(mode === "otp" || mode === "reset") && <div className="fld full" style={fld}><label>6-digit code</label><input value={f.code} onChange={e => set("code", e.target.value)} inputMode="numeric" required /></div>}
+            {(mode === "in" || mode === "up" || mode === "reset") && <div className="fld full" style={fld}><label>{mode === "reset" ? "New password" : "Password"}</label><input type="password" value={f.password} onChange={e => set("password", e.target.value)} required /></div>}
+            {(mode === "up" || mode === "reset") && <div className="fld full" style={fld}><label>Confirm password</label><input type="password" value={f.password_confirmation} onChange={e => set("password_confirmation", e.target.value)} required /></div>}
+            {msg && <p className="po-s" style={{ color: "var(--accent-d)", margin: "0 0 10px" }}>{msg}</p>}
             {err && <p className="po-s" style={{ color: "#e5484d", margin: "0 0 10px" }}>{err}</p>}
-            <button className="btn-cta co-pay-btn" type="submit" disabled={busy}>{busy ? "Please wait…" : (mode === "in" ? "Sign In" : "Create Account")}</button>
+            <button className="btn-cta co-pay-btn" type="submit" disabled={busy}>{busy ? "Please wait…" : ({ in: "Sign In", up: "Create Account", otp: "Verify", forgot: "Send code", reset: "Reset password" }[mode])}</button>
           </form>
           <p className="po-s" style={{ marginTop: 14, textAlign: "center" }}>
-            {mode === "in"
-              ? <>New to BOLETO? <a style={{ color: "var(--accent-d)", cursor: "pointer", fontWeight: 700 }} onClick={() => { setMode("up"); setErr(null); }}>Create an account</a></>
-              : <>Already have an account? <a style={{ color: "var(--accent-d)", cursor: "pointer", fontWeight: 700 }} onClick={() => { setMode("in"); setErr(null); }}>Sign in</a></>}
+            {mode === "in" && <>New to BOLETO? <a style={{ color: "var(--accent-d)", cursor: "pointer", fontWeight: 700 }} onClick={() => go("up")}>Create an account</a> · <a style={{ color: "var(--accent-d)", cursor: "pointer", fontWeight: 700 }} onClick={() => go("forgot")}>Forgot password?</a></>}
+            {mode === "up" && <>Already have an account? <a style={{ color: "var(--accent-d)", cursor: "pointer", fontWeight: 700 }} onClick={() => go("in")}>Sign in</a></>}
+            {mode === "otp" && <><a style={{ color: "var(--accent-d)", cursor: "pointer", fontWeight: 700 }} onClick={resend}>Resend code</a> · <a style={{ color: "var(--accent-d)", cursor: "pointer", fontWeight: 700 }} onClick={() => go("in")}>Back to sign in</a></>}
+            {(mode === "forgot" || mode === "reset") && <a style={{ color: "var(--accent-d)", cursor: "pointer", fontWeight: 700 }} onClick={() => go("in")}>Back to sign in</a>}
           </p>
         </div>
       </div></section>
