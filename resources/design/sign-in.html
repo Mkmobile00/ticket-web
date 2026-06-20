@@ -1005,7 +1005,7 @@ function Hero({ D, onSearch }) {
   uE(() => { const t = setInterval(() => setWi(i => (i + 1) % words.length), 2600); return () => clearInterval(t); }, [words.length]);
   return (
     <section className="hero">
-      <div className="hero-bg"><img src={img("cinema-theatre-stage-lights", 1600, 700)} alt="" /></div>
+      <div className="hero-bg"><img src={"/assets/images/hero/cinema-hero.jpg"} alt="" /></div>
       <div className="hero-veil" />
       <div className="wrap hero-in">
         <h1>Book Your<br />Tickets for <span className="rot">{words[wi]}</span></h1>
