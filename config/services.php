@@ -50,6 +50,16 @@ return [
         'image_base' => env('TMDB_IMAGE_BASE', 'https://image.tmdb.org/t/p/w500'),
     ],
 
+    // SMS gateway (OTP to mobile). Default 'log' driver writes the OTP to the
+    // log so you can test the flow with no paid gateway; set SMS_DRIVER + the
+    // matching credentials to send real SMS.
+    'sms' => [
+        'driver'  => env('SMS_DRIVER', 'log'),
+        'sparrow' => ['token' => env('SPARROW_SMS_TOKEN'), 'from' => env('SPARROW_SMS_FROM', 'Demo')],
+        'twilio'  => ['sid' => env('TWILIO_SID'), 'token' => env('TWILIO_TOKEN'), 'from' => env('TWILIO_FROM')],
+        'msg91'   => ['authkey' => env('MSG91_AUTHKEY'), 'sender' => env('MSG91_SENDER'), 'country' => env('MSG91_COUNTRY', '91')],
+    ],
+
     // Google Sign-In: the OAuth **Web client ID**. When set, the API verifies that
     // a submitted Google ID token's `aud` claim matches this id (prevents tokens
     // minted for other apps being accepted at POST /api/v1/auth/google).

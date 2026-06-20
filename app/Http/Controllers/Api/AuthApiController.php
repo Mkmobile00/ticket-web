@@ -7,6 +7,7 @@ use App\Mail\LoginAlertMail;
 use App\Mail\OtpMail;
 use App\Mail\WelcomeMail;
 use App\Models\User;
+use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -26,13 +27,39 @@ class AuthApiController extends Controller
     /** Personal access token lifetime (days) — stolen tokens expire instead of living forever. */
     private const TOKEN_TTL_DAYS = 30;
 
+    public function __construct(private SmsService $sms) {}
+
+    /**
+     * Generate a 6-digit code, cache it (30 min) and send it to the user's
+     * email AND phone (one code, both channels).
+     */
+    private function issueOtp(User $user, string $cacheKey, string $subject): string
+    {
+        $code = (string) random_int(100000, 999999);
+        cache()->put($cacheKey, $code, now()->addMinutes(30));
+
+        $this->safeMail($user->email, new OtpMail($code, $subject, 'Use this code in the app. It expires in 30 minutes:'));
+        if ($user->phone) {
+            $this->sms->send($user->phone, "Your Boleto code is {$code}. It expires in 30 minutes.");
+        }
+        return $code;
+    }
+
+    /** Find a user by email OR phone (for forgot/reset). */
+    private function findByIdentifier(?string $id): ?User
+    {
+        $id = trim((string) $id);
+        if ($id === '') return null;
+        return User::where('email', $id)->orWhere('phone', $id)->first();
+    }
+
     /** POST /api/v1/register  { name, email, password, password_confirmation, phone? } */
     public function register(Request $request)
     {
         $data = $request->validate([
             'name' => 'required|string|max:120',
             'email' => 'required|email|max:160|unique:users',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'required|string|max:20|unique:users',
             'password' => ['required', 'confirmed', Password::min(8)],
         ]);
         $data['password'] = Hash::make($data['password']);
@@ -40,10 +67,13 @@ class AuthApiController extends Controller
 
         $user = User::create($data);
         $this->safeMail($user->email, new WelcomeMail($user));
+        // One verification code to BOTH email and phone.
+        $this->issueOtp($user, 'acct_verify:' . $user->id, 'Verify your account');
 
         return response()->json([
             'user' => $this->userPayload($user),
             'token' => $user->createToken('flutter', ['*'], now()->addDays(self::TOKEN_TTL_DAYS))->plainTextToken,
+            'verification_required' => true,
         ], 201);
     }
 
@@ -77,43 +107,37 @@ class AuthApiController extends Controller
      */
     public function forgotPassword(Request $request)
     {
-        $request->validate(['email' => 'required|email']);
-        $user = User::where('email', $request->email)->first();
+        // Accept `identifier` (email OR phone); keep `email` for backward-compat.
+        $id = $request->input('identifier') ?: $request->input('email');
+        $user = $this->findByIdentifier($id);
 
         if ($user) {
-            $code = (string) random_int(100000, 999999);
-            DB::table('password_reset_tokens')->updateOrInsert(
-                ['email' => $user->email],
-                ['token' => Hash::make($code), 'created_at' => now()]
-            );
-            $this->safeMail($user->email, new OtpMail($code, 'Reset your password', 'Enter this code in the app to reset your password:'));
+            $this->issueOtp($user, 'pwreset:' . $user->id, 'Reset your password');
         }
 
-        return response()->json(['message' => 'If that email exists, a reset code has been sent.']);
+        return response()->json(['message' => 'If that account exists, a reset code has been sent to its email and phone.']);
     }
 
-    /** POST /api/v1/password/reset  { email, code, password, password_confirmation } */
+    /** POST /api/v1/password/reset  { identifier (email|phone), code, password, password_confirmation } */
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
             'code' => 'required|string',
             'password' => ['required', 'confirmed', Password::min(8)],
         ]);
 
-        $row = DB::table('password_reset_tokens')->where('email', $request->email)->first();
-        $expired = ! $row || \Illuminate\Support\Carbon::parse($row->created_at)->addMinutes(30)->isPast();
+        $id = $request->input('identifier') ?: $request->input('email');
+        $user = $this->findByIdentifier($id);
+        $cached = $user ? cache()->get('pwreset:' . $user->id) : null;
 
-        if ($expired || ! Hash::check($request->code, $row->token)) {
+        if (! $user || ! $cached || ! hash_equals((string) $cached, (string) $request->code)) {
             return response()->json(['message' => 'Invalid or expired code.', 'errors' => ['code' => ['Invalid or expired code.']]], 422);
         }
 
-        $user = User::where('email', $request->email)->first();
         $user->forceFill(['password' => Hash::make($request->password)])->save();
-        // Revoke every existing token: a password reset must invalidate any
-        // previously stolen/leaked session so it can't outlive the reset.
+        // Revoke every existing token so a leaked session can't outlive the reset.
         $user->tokens()->delete();
-        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+        cache()->forget('pwreset:' . $user->id);
 
         return response()->json(['message' => 'Password has been reset. Please log in.']);
     }
@@ -161,31 +185,30 @@ class AuthApiController extends Controller
         ]);
     }
 
-    /** POST /api/v1/email/verify/send  (auth) — emails a code (cached 30 min). */
+    /** POST /api/v1/email/verify/send  (auth) — (re)send the code to email + phone. */
     public function sendEmailVerification(Request $request)
     {
         $user = $request->user();
         if ($user->email_verified_at) {
-            return response()->json(['message' => 'Email already verified.']);
+            return response()->json(['message' => 'Account already verified.']);
         }
-        $code = (string) random_int(100000, 999999);
-        cache()->put('email_verify:' . $user->id, $code, now()->addMinutes(30));
-        $this->safeMail($user->email, new OtpMail($code, 'Verify your email', 'Enter this code in the app to verify your email:'));
-        return response()->json(['message' => 'Verification code sent.']);
+        $this->issueOtp($user, 'acct_verify:' . $user->id, 'Verify your account');
+        return response()->json(['message' => 'Verification code sent to your email and phone.']);
     }
 
-    /** POST /api/v1/email/verify  (auth)  { code } */
+    /** POST /api/v1/email/verify  (auth)  { code } — verify the signup code. */
     public function verifyEmail(Request $request)
     {
         $request->validate(['code' => 'required|string']);
-        $cached = cache()->get('email_verify:' . $request->user()->id);
-        if (! $cached || $cached !== $request->code) {
+        $user = $request->user();
+        $cached = cache()->get('acct_verify:' . $user->id);
+        if (! $cached || ! hash_equals((string) $cached, (string) $request->code)) {
             return response()->json(['message' => 'Invalid or expired code.', 'errors' => ['code' => ['Invalid code.']]], 422);
         }
         // forceFill: email_verified_at is not in the model's $fillable.
-        $request->user()->forceFill(['email_verified_at' => now()])->save();
-        cache()->forget('email_verify:' . $request->user()->id);
-        return response()->json(['message' => 'Email verified.']);
+        $user->forceFill(['email_verified_at' => now()])->save();
+        cache()->forget('acct_verify:' . $user->id);
+        return response()->json(['message' => 'Account verified.', 'user' => $this->userPayload($user)]);
     }
 
     /** POST /api/v1/logout  (auth) — revokes the current token */
