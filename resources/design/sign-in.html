@@ -1387,10 +1387,15 @@ function AuthPage() {
             {err && <p className="po-s" style={{ color: "#e5484d", margin: "0 0 10px" }}>{err}</p>}
             <button className="btn-cta co-pay-btn" type="submit" disabled={busy}>{busy ? "Please wait…" : ({ in: "Sign In", up: "Create Account", otp: "Verify", forgot: "Send code", reset: "Reset password" }[mode])}</button>
           </form>
-          {(mode === "in" || mode === "up") && window.BOLETO_DATA.googleClientId ? (
+          {(mode === "in" || mode === "up") ? (
             <div style={{ marginTop: 16 }}>
               <p className="po-s" style={{ textAlign: "center", margin: "0 0 10px" }}>or continue with</p>
-              <div ref={gbtn} style={{ display: "flex", justifyContent: "center" }} />
+              {window.BOLETO_DATA.googleClientId
+                ? <div ref={gbtn} style={{ display: "flex", justifyContent: "center" }} />
+                : <button type="button" onClick={() => setErr("Google sign-in isn't set up yet — add the Google Client ID in admin → Settings.")}
+                    style={{ width: "100%", height: 48, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, background: "#fff", color: "#3c4043", border: "1px solid var(--line)", borderRadius: 26, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", fontSize: 14.5 }}>
+                    <span style={{ color: "#ea4335", fontWeight: 900, fontSize: 17 }}>G</span> Continue with Google
+                  </button>}
             </div>
           ) : null}
           <p className="po-s" style={{ marginTop: 14, textAlign: "center" }}>
