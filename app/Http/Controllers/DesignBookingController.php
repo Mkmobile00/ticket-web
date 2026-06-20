@@ -34,20 +34,19 @@ class DesignBookingController extends Controller
     ) {}
 
     /** The logged-in customer, or a stable seeded demo customer when browsing as guest. */
-    private function currentUser(): User
+    /** The signed-in customer, or null when nobody is logged in (no demo guest). */
+    private function currentUser(): ?User
     {
-        if (($u = auth()->user()) && ! $u->is_admin) {
-            return $u;
-        }
-        return User::firstOrCreate(
-            ['email' => 'demo@boleto.test'],
-            ['name' => 'Demo Guest', 'password' => bcrypt(str()->random(32)), 'role' => 'customer']
-        );
+        $u = auth()->user();
+        return ($u && ! $u->is_admin) ? $u : null;
     }
 
     private function owner(): string
     {
-        return 'user:' . $this->currentUser()->id;
+        $u = $this->currentUser();
+        // Logged-in customer locks seats as user:<id>; a guest browsing the seat
+        // map gets a per-session owner (they still can't check out — see checkout()).
+        return $u ? 'user:' . $u->id : 'sess:' . session()->getId();
     }
 
     private function resolveSeatable(string $type, int $id): ?Model
@@ -190,7 +189,14 @@ class DesignBookingController extends Controller
         $seatable = $this->resolveSeatable($data['type'], $data['id']);
         abort_unless($seatable, 404);
 
-        $user  = $this->currentUser();
+        // Must be signed in to book (movies, events and sports alike).
+        $user = $this->currentUser();
+        if (! $user) {
+            return response()->json([
+                'message' => 'Please sign in to book tickets.',
+                'login_required' => true,
+            ], 401);
+        }
         $owner = 'user:' . $user->id;
 
         // 1) lock + pending booking (throws ValidationException on conflict)
@@ -268,7 +274,15 @@ class DesignBookingController extends Controller
     public function myBookings()
     {
         $user = $this->currentUser();
-        $guest = ! (auth()->user() && ! auth()->user()->is_admin);
+        if (! $user) {
+            return response()->json([
+                'user'  => null,
+                'stats' => ['total' => 0, 'confirmed' => 0, 'cancelled' => 0, 'spent' => 0],
+                'data'  => [],
+                'login_required' => true,
+            ], 401);
+        }
+        $guest = false;
 
         $rows = Booking::where('user_id', $user->id)
             ->with(['seats', 'showtime.movie', 'showtime.screen.cinema.city', 'bookable'])
