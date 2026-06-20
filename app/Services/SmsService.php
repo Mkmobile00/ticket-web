@@ -108,24 +108,42 @@ class SmsService
     private function twilio(string $phone, string $message): bool
     {
         $c = config('services.sms.twilio');
-        $res = Http::withBasicAuth($c['sid'] ?? '', $c['token'] ?? '')
-            ->asForm()->post("https://api.twilio.com/2010-04-01/Accounts/" . ($c['sid'] ?? '') . "/Messages.json", [
-                'From' => $c['from'] ?? '',
+        $sid   = $this->setting('sms_twilio_sid') ?: ($c['sid'] ?? '');
+        $token = $this->setting('sms_twilio_token') ?: ($c['token'] ?? '');
+        $from  = $this->setting('sms_twilio_from') ?: ($c['from'] ?? '');
+        if ($sid === '' || $token === '') {
+            Log::warning('Twilio SMS: missing sid/token (set in admin → Settings).');
+            return false;
+        }
+        $res = Http::withBasicAuth($sid, $token)
+            ->asForm()->post("https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json", [
+                'From' => $from,
                 'To'   => $phone,
                 'Body' => $message,
             ]);
+        if (! $res->successful()) {
+            Log::warning('Twilio SMS not sent', ['status' => $res->status(), 'resp' => $res->json()]);
+        }
         return $res->successful();
     }
 
     private function msg91(string $phone, string $message): bool
     {
         $c = config('services.sms.msg91');
+        $authkey = $this->setting('sms_msg91_authkey') ?: ($c['authkey'] ?? '');
+        $sender  = $this->setting('sms_msg91_sender') ?: ($c['sender'] ?? '');
+        $country = $this->setting('sms_msg91_country') ?: ($c['country'] ?? '91');
+        if ($authkey === '') {
+            Log::warning('MSG91 SMS: missing authkey (set in admin → Settings).');
+            return false;
+        }
         $res = Http::post('https://api.msg91.com/api/v2/sendsms', [
-            'sender' => $c['sender'] ?? '',
-            'route'  => '4',
-            'country' => $c['country'] ?? '91',
-            'sms'    => [['message' => $message, 'to' => [$phone]]],
-        ] + ['authkey' => $c['authkey'] ?? '']);
+            'sender'  => $sender,
+            'route'   => '4',
+            'country' => $country,
+            'sms'     => [['message' => $message, 'to' => [$phone]]],
+            'authkey' => $authkey,
+        ]);
         return $res->successful();
     }
 }
