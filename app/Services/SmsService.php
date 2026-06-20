@@ -30,10 +30,11 @@ class SmsService
 
         try {
             return match ($driver) {
-                'sparrow' => $this->sparrow($phone, $message),
-                'twilio'  => $this->twilio($phone, $message),
-                'msg91'   => $this->msg91($phone, $message),
-                default   => $this->logDriver($phone, $message),
+                'sparrow'  => $this->sparrow($phone, $message),
+                'twilio'   => $this->twilio($phone, $message),
+                'msg91'    => $this->msg91($phone, $message),
+                'textbelt' => $this->textbelt($phone, $message),
+                default    => $this->logDriver($phone, $message),
             };
         } catch (\Throwable $e) {
             Log::warning('SMS send failed', ['driver' => $driver, 'error' => $e->getMessage()]);
@@ -45,6 +46,25 @@ class SmsService
     {
         Log::info("[SMS:log] to {$phone}: {$message}");
         return true;
+    }
+
+    /**
+     * Textbelt — free demo: the special key "textbelt" sends 1 real SMS/day with
+     * no signup. Best-effort delivery (US/Canada-focused; may not reach +977).
+     */
+    private function textbelt(string $phone, string $message): bool
+    {
+        $key = config('services.sms.textbelt.key', 'textbelt');
+        $res = Http::asForm()->post('https://textbelt.com/text', [
+            'phone'   => $phone,
+            'message' => $message,
+            'key'     => $key,
+        ]);
+        $ok = $res->successful() && ($res->json('success') === true);
+        if (! $ok) {
+            Log::warning('Textbelt SMS not sent', ['resp' => $res->json()]);
+        }
+        return $ok;
     }
 
     private function sparrow(string $phone, string $message): bool

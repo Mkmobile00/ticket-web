@@ -58,6 +58,8 @@ return [
         'sparrow' => ['token' => env('SPARROW_SMS_TOKEN'), 'from' => env('SPARROW_SMS_FROM', 'Demo')],
         'twilio'  => ['sid' => env('TWILIO_SID'), 'token' => env('TWILIO_TOKEN'), 'from' => env('TWILIO_FROM')],
         'msg91'   => ['authkey' => env('MSG91_AUTHKEY'), 'sender' => env('MSG91_SENDER'), 'country' => env('MSG91_COUNTRY', '91')],
+        // Free demo: key "textbelt" = 1 real SMS/day, no signup (US/CA focused).
+        'textbelt' => ['key' => env('TEXTBELT_KEY', 'textbelt')],
     ],
 
     // Google Sign-In: the OAuth **Web client ID**. When set, the API verifies that
